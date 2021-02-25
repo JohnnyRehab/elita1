@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" type="text/css" href="css/reset.css">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <title>ELITA-1</title>
+    <meta name="description" content="ELITA-1, HTML5 web audio api with Javascript, tons of Synth1 patch preview on the web, and managing these with Github">
+    <meta name="keywords" content="html5, web audio api, Javascript, Synth1, github, NexusUI, tone.js">
+  </head>
+  <body>
+    <div id="elita1">
+      <div id="title" class="mb3">
+        <h1 class="fs2em">ELITA-1</h1>
+        <h2 class="description"><!-- HTML5 Audio API with Javascript-->Powered by NexusUI.js and tone.js</h2>
+        <h3 class="version mr10">ver 0.0.1</h3>
+        <h3 class="date">2021.01.30</h3>
+      </div>
+      <hr class="mb3">
+      <div id="table-cell01" class="pr5">
+        <div id="oscillators">
+          <h2 class="h2-label">Oscillators</h2>
+            <div style="display: inline-block; width:461px; margin-top: 10px;">
+            <div class="osc1-left">
+              <span class="osc-label">1</span>
+                <form action="" method="post" id="osc1-radio">
+                  <input type="radio" name="osc1" value="1" id="sine" checked="checked" class="osc1-radio"><img src="img/sin.svg" width="24" height="24" class="mr15">
+                  <input type="radio" name="osc1" value="2" id="triangle" class="osc1-radio"><img src="img/triangle.svg" width="24" height="24">
+                  <input type="radio" name="osc1" value="3" id="saw" class="osc1-radio"><img src="img/saw.svg" width="24" height="24" class="mr15">
+                  <input type="radio" name="osc1" value="4" id="square" class="osc1-radio"><img src="img/square.svg" width="22" height="22">
+                </form>
+                <div style="display: inline-block; width: 50px">
+                  <div id="osc1-det"></div><span style="margin: 0 0 0 8px;">det</span>
+                </div>
+                <div style="display: inline-block; width: 50px">
+                  <div id="osc1-fm"></div><span style="margin: 0 0 0 8px;">FM</span>
+                </div>
+            </div>
+            <div class="osc1-right">
+              <div style="float: left;; width: 50px;">
+              <span style="margin: 0 8px;float: left;">sub</span>
+              <div style="float: left;"><div id="osc1-sub"></div></div>
+              </div>
+              <form action="" method="post" id="osc1-radio2">
+                <input type="radio" name="osc1" value="1" id="sine" checked="checked" class="osc1-radio"><img src="img/sin.svg" width="24" height="24" class="mr15">
+                <input type="radio" name="osc1" value="2" id="triangle" class="osc1-radio"><img src="img/triangle.svg" width="24" height="24">
+                <input type="radio" name="osc1" value="3" id="saw" class="osc1-radio"><img src="img/saw.svg" width="24" height="24" class="mr15">
+                <input type="radio" name="osc1" value="4" id="square" class="osc1-radio"><img src="img/square.svg" width="22" height="22">
+              </form>
+            </div>
+          </div>
+        </div><!-- #oscilators -->
+        <div id="lfo">
+          <h2 class="h2-label">LFO</h2>
+        </div>
+      </div>
+      <div id="table-cell02" class="pr5">
+        <div id="amplifier">
+          <h2 class="h2-label">Amplifier</h2>
+        </div>
+        <div id="filter">
+          <h2 class="h2-label">Filter</h2>
+        </div>
+        <div id="arpeggiator">
+          <h2 class="h2-label">Arpeggiator</h2>
+        </div>
+      </div>
+      <div id="table-cell03" class="pr5">
+        <div id="effect">
+          <h2 class="h2-label">Effect</h2>
+        </div>
+        <div id="equalizer-pan">
+          <h2 class="h2-label">Equalizer / Pan</h2>
+        </div>
+        <div id="tempo-delay">
+          <h2 class="h2-label">Tempo Delay</h2>
+        </div>
+        <div id="chrous-flanger">
+          <h2 class="h2-label">Chrous / Flanger</h2>
+        </div>
+        <div id="voice">
+          <h2 class="h2-label">Voice</h2>
+        </div>
+      </div>
+      <div id="" class="pr5">
+        <div id="midi-while">
+          <h2 class="h2-label">MIDI-while</h2>
+        </div>
+        <div id="vol">
+          <h2 class="h2-label">vol</h2>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/NexusUI.js"></script>
+    <script src="js/ui.js"></script>
+  </body>
+</html>
