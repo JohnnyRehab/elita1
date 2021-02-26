@@ -19,7 +19,7 @@
       <div id="table-cell01" class="pr5">
         <div id="oscillators">
           <h2 class="h2-label">Oscillators</h2>
-            <div style="display: inline-block; width:461px; margin-top: 10px;">
+          <div class="osc1">
             <div class="osc1-left">
               <span class="osc-label">1</span>
                 <form action="" method="post" id="osc1-radio">
@@ -36,18 +36,24 @@
                 </div>
             </div>
             <div class="osc1-right">
-              <div style="float: left;; width: 50px;">
+              <div style="float: left; width: 50px; margin-left: 10px;" class="clearfix">
               <span style="margin: 0 8px;float: left;">sub</span>
               <div style="float: left;"><div id="osc1-sub"></div></div>
               </div>
-              <form action="" method="post" id="osc1-radio2">
-                <input type="radio" name="osc1" value="1" id="sine" checked="checked" class="osc1-radio"><img src="img/sin.svg" width="24" height="24" class="mr15">
-                <input type="radio" name="osc1" value="2" id="triangle" class="osc1-radio"><img src="img/triangle.svg" width="24" height="24">
-                <input type="radio" name="osc1" value="3" id="saw" class="osc1-radio"><img src="img/saw.svg" width="24" height="24" class="mr15">
-                <input type="radio" name="osc1" value="4" id="square" class="osc1-radio"><img src="img/square.svg" width="22" height="22">
-              </form>
+                <form action="" method="post" id="osc1-sub-radio">
+                  <input type="radio" name="osc1-sub-radio" value="1" id="sine" checked="checked" class="osc1-radio"><img src="img/sin.svg" width="24" height="24" class="mr15">
+                  <input type="radio" name="osc1-sub-radio" value="2" id="triangle" class="osc1-radio"><img src="img/triangle.svg" width="24" height="24">
+                  <input type="radio" name="osc1-sub-radio" value="3" id="saw" class="osc1-radio"><img src="img/saw.svg" width="24" height="24" class="mr15">
+                  <input type="radio" name="osc1-sub-radio" value="4" id="square" class="osc1-radio"><img src="img/square.svg" width="22" height="22">
+                </form>
+              <div class="clearfix">
+                <form action="" method="post" id="osc1-sub-radio2">
+                  <input type="radio" name="osc1-sub-radio2" value="1" id="0oct" checked="checked" class="osc1-radio">0 oct
+                  <input type="radio" name="osc1-sub-radio2" value="2" id="-1oct" class="osc1-radio">-1 oct
+                </form>
+              </div>
             </div>
-          </div>
+          </div><!-- .osc1 -->
         </div><!-- #oscilators -->
         <div id="lfo">
           <h2 class="h2-label">LFO</h2>
