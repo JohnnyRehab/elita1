@@ -72,7 +72,7 @@ body{
   margin-left: 60px
 }
 
-.osc1 {
+.osc1{
   display: inline-block;
   border-bottom: 1px solid #030303;
   margin-top: 5px;
@@ -102,6 +102,21 @@ body{
   color: white;
   margin: 0 8px 0 0;
 }
+
+.osc2{
+  display: inline-block;
+  position: absolute;
+  top:  185px;
+  left:   5px;
+}
+.osc2-radio2-ring-sync{
+  display: inline-block;
+  position: absolute;
+  width: 300px;
+  top:  0px;
+  left: 150px;
+}
+
 .h2-label{
   display: block;
   font-size: 1.5em;
