@@ -162,7 +162,7 @@ body{
   left: 23px;
   font-size: 1.25em;
   font-weight: bold;
-  padding: 1px 6px 6px;
+  padding: 1px 6px 5px;
   background-color: #3c3c3c;
   color: white;
 }
@@ -197,6 +197,47 @@ body{
   position: absolute;
   top: 90px;
   left: 290px;
+}
+
+.osc2-m-env-position{
+  position: absolute;
+  top: 315px;
+  left: 7px;
+}
+
+.osc2-label-m-env{
+  position: absolute;
+  top: 308px;
+  left: 28px;
+  font-size: 1.25em;
+  font-weight: bold;
+  padding: 1px 6px 5px;
+  background-color: #3c3c3c;
+  color: white;
+}
+
+.a-position{
+  position: absolute;
+  top: 305px;
+  left: 125px;
+}
+
+.osc2-a-label, .osc2-d-label, .osc2-amt-label{
+  position: absolute;
+  top: 38px;
+  left: 34px
+}
+
+.d-position{
+  position: absolute;
+  top: 305px;
+  left: 180px;
+}
+
+.amt-position{
+  position: absolute;
+  top: 305px;
+  left: 237px;
 }
 
 
