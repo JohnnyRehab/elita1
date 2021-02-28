@@ -35,6 +35,8 @@ body{
 #oscillators{
   width: 450px;
   height: 310px;
+  border-left: 2px solid #030303;
+  margin-bottom: 10px;
 }
 #oscillators .osc{
   display: inline-block;
@@ -116,6 +118,87 @@ body{
   top:  0px;
   left: 150px;
 }
+.osc2-label-ring{
+  position: absolute;
+  top: 20px;
+  left: 0px;
+  font-size: 1.25em;
+  font-weight: bold;
+  padding: 1px 6px 6px;
+  background-color: #3c3c3c;
+  color: white;
+}
+.osc2-ring-position{
+  position: absolute;
+  top: 0px;
+  left: 18px;
+}
+
+.osc2-label-sync{
+  position: absolute;
+  top: 20px;
+  left: 60px;
+  font-size: 1.25em;
+  font-weight: bold;
+  padding: 1px 6px 6px;
+  background-color: #3c3c3c;
+  color: white;
+}
+.osc2-sync-position{
+  position: absolute;
+  top: 0px;
+  left: 78px;
+}
+
+.osc2-track-position{
+  position: absolute;
+  top: 63px;
+  left: 2px;
+}
+
+.osc2-label-track{
+  position: absolute;
+  top: 57px;
+  left: 23px;
+  font-size: 1.25em;
+  font-weight: bold;
+  padding: 1px 6px 6px;
+  background-color: #3c3c3c;
+  color: white;
+}
+
+.osc2-pitch-position{
+  position: absolute;
+  top: 62px;
+  left: 100px;
+}
+#osc2-pitch-dial{
+  position: absolute;
+  top: 70px;
+  left: 120px
+}
+.osc2-label-pitch{
+  position: absolute;
+  top: 90px;
+  left: 168px;
+}
+
+.osc2-fine-position{
+  position: absolute;
+  top: 63px;
+  left: 220px;
+}
+#osc2-fine-dial{
+  position: absolute;
+  top: 70px;
+  left: 240px
+}
+.osc2-label-fine{
+  position: absolute;
+  top: 90px;
+  left: 290px;
+}
+
 
 .h2-label{
   display: block;
