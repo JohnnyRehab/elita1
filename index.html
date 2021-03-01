@@ -5,125 +5,104 @@
     <link rel="stylesheet" type="text/css" href="css/style.css">
     <title>ELITA-1</title>
     <meta name="description" content="ELITA-1, HTML5 web audio api with Javascript, tons of Synth1 patch preview on the web, and managing these with Github">
-    <meta name="keywords" content="html5, web audio api, Javascript, Synth1, github, NexusUI, tone.js">
+    <meta name="keywords" content="html5, web audio api, Javascript, Synth1, github, NexusUI, tone.js, p5.js, supercollider.js">
   </head>
-  <body>
-    <div id="elita1">
-      <div id="title" class="mb3">
-        <h1 class="fs2em">ELITA-1</h1>
-        <h2 class="description"><!-- HTML5 Audio API with Javascript-->Powered by NexusUI.js and tone.js</h2>
-        <h3 class="version mr10">ver 0.0.1</h3>
-        <h3 class="date">2021.01.30</h3>
-      </div>
-      <hr class="mb3">
-      <div id="table-cell01" class="pr5">
-        <div id="oscillators">
-          <h2 class="h2-label">Oscillators</h2>
+  <body id="elita1">
+
+      <div id="title">
+          <h1 class="fs2em">ELITA-1</h1>
+          <h2 class="description"><!-- HTML5 Audio API with Javascript-->Powered by NexusUI.js and tone.js</h2>
+          <h3 class="version mr10">ver 0.0.1</h3>
+          <h3 class="date">2021.01.30</h3>
+      </div><!-- #title -->
+
+      <div id="oscillators">
+        <h2 class="h2-label">Oscillators</h2>
           <div class="osc1">
-            <div class="osc1-left">
-              <span class="osc-label">1</span>
+              <div class="osc-label">1</div>
                 <form action="" method="post" id="osc1-radio">
-                  <input type="radio" name="osc1" value="1" id="sine" checked="checked" class="osc1-radio"><img src="img/sin.svg" width="24" height="24" class="mr15">
-                  <input type="radio" name="osc1" value="2" id="triangle" class="osc1-radio"><img src="img/triangle.svg" width="24" height="24">
-                  <input type="radio" name="osc1" value="3" id="saw" class="osc1-radio"><img src="img/saw.svg" width="24" height="24" class="mr15">
-                  <input type="radio" name="osc1" value="4" id="square" class="osc1-radio"><img src="img/square.svg" width="22" height="22">
+                  <input type="radio" name="osc1" value="1" id="sine" checked="checked" class="mr10"><img src="img/sin.svg" width="24" height="24" class="mr15">
+                  <input type="radio" name="osc1" value="2" id="triangle" class="mr10"><img src="img/triangle.svg" width="24" height="24">
+                  <input type="radio" name="osc1" value="3" id="saw" class="mr10"><img src="img/saw.svg" width="24" height="24" class="mr15">
+                  <input type="radio" name="osc1" value="4" id="square" class="mr10"><img src="img/square.svg" width="22" height="22">
                 </form>
-                <div style="display: inline-block; width: 50px">
-                  <div id="osc1-det"></div><span style="margin: 0 0 0 8px;">det</span>
-                </div>
-                <div style="display: inline-block; width: 50px">
-                  <div id="osc1-fm"></div><span style="margin: 0 0 0 8px;">FM</span>
-                </div>
-            </div>
-            <div class="osc1-right">
-              <div style="float: left; width: 50px; margin-left: 10px;" class="clearfix">
-              <span style="margin: 0 8px;float: left;">sub</span>
-              <div style="float: left;"><div id="osc1-sub"></div></div>
-              </div>
-                <form action="" method="post" id="osc1-sub-radio">
-                  <input type="radio" name="osc1-sub-radio" value="1" id="sine" checked="checked" class="osc1-radio"><img src="img/sin.svg" width="24" height="24" class="mr15">
-                  <input type="radio" name="osc1-sub-radio" value="2" id="triangle" class="osc1-radio"><img src="img/triangle.svg" width="24" height="24">
-                  <input type="radio" name="osc1-sub-radio" value="3" id="saw" class="osc1-radio"><img src="img/saw.svg" width="24" height="24" class="mr15">
-                  <input type="radio" name="osc1-sub-radio" value="4" id="square" class="osc1-radio"><img src="img/square.svg" width="22" height="22">
-                </form>
-              <div class="clearfix">
-                <form action="" method="post" id="osc1-sub-radio2">
-                  <input type="radio" name="osc1-sub-radio2" value="1" id="0oct" checked="checked" class="osc1-radio">0 oct
-                  <input type="radio" name="osc1-sub-radio2" value="2" id="-1oct" class="osc1-radio">-1 oct
-                </form>
-              </div>
-            </div>
+                <div id="osc1-det"></div><span class="posi-det">det</span>
+                <div id="osc1-fm"></div><span class="posi-fm">FM</span>
+                <div class="osc1-right">
+                  <span class="posi-sub">sub</span>
+                  <div id="osc1-sub"></div>
+                    <form action="" method="post" id="osc1-sub-radio">
+                      <input type="radio" name="osc1-sub-radio" value="1" id="sine" checked="checked" class="mr10"><img src="img/sin.svg" width="24" height="24" class="mr15">
+                      <input type="radio" name="osc1-sub-radio" value="2" id="triangle" class="mr10"><img src="img/triangle.svg" width="24" height="24">
+                      <input type="radio" name="osc1-sub-radio" value="3" id="saw" class="mr10"><img src="img/saw.svg" width="24" height="24" class="mr15">
+                      <input type="radio" name="osc1-sub-radio" value="4" id="square" class="mr10"><img src="img/square.svg" width="22" height="22">
+                    </form>
+ 
+                    <form action="" method="post" id="osc1-sub-radio2">
+                      <input type="radio" name="osc1-sub-radio2" value="1" id="0oct" checked="checked"><span class="ml5">0 oct</span>
+                      <input type="radio" name="osc1-sub-radio2" value="2" id="-1oct" class="ml10"><span class="ml5">-1 oct</span>
+                    </form>
+                </div><!-- .osc1-right -->
           </div><!-- .osc1 -->
-          <div style="border-bottom: 1px solid #010101; height: 125px; width: 345px;">
           <div class="osc2">
-            <span class="osc-label">2</span>
+            <div class="osc-label">2</div>
             <div style="width: 130px;">
               <form action="" method="post" id="osc2-radio">
-                <input type="radio" name="osc2" value="1" id="sine" checked="checked" class="osc1-radio"><img src="img/sin.svg" width="24" height="24" class="mr15">
-                <input type="radio" name="osc2" value="2" id="triangle" class="osc1-radio"><img src="img/triangle.svg" width="24" height="24">
-                <input type="radio" name="osc2" value="3" id="saw" class="osc1-radio"><img src="img/saw.svg" width="24" height="24" class="mr15">
-                <input type="radio" name="osc2" value="4" id="square" class="osc1-radio"><img src="img/square.svg" width="22" height="22">
+                <input type="radio" name="osc2" value="1" id="sine" checked="checked" class="mr10"><img src="img/sin.svg" width="24" height="24" class="mr15">
+                <input type="radio" name="osc2" value="2" id="triangle" class="mr10"><img src="img/triangle.svg" width="24" height="24">
+                <input type="radio" name="osc2" value="3" id="saw" class="mr10"><img src="img/saw.svg" width="24" height="24" class="mr15">
+                <input type="radio" name="osc2" value="4" id="square" class="mr10"><img src="img/square.svg" width="22" height="22">
               </form>
             </div>
-            <div class="osc2-radio2-ring-sync">
-                <div class="osc2-label-ring">ring</div><div id="osc2-ring" checked="checked" class="osc2-radio osc2-ring-position"></div>
-                <div class="osc2-label-sync">sync</div><div id="osc2-sync" class="osc2-radio osc2-sync-position"></div>
-            </div>
+              <div class="osc2-label-ring">ring</div><div id="osc2-ring" checked="checked" class="osc2-radio osc2-ring-position"></div>
+              <div class="osc2-label-sync">sync</div><div id="osc2-sync" class="osc2-radio osc2-sync-position"></div>
               <div id="osc2-track" class="osc2-track-position"></div><div class="osc2-label-track">track</div>
               <div id="osc2-pitch" class="osc2-pitch-position"></div><div id="osc2-pitch-dial"></div><div class="osc2-label-pitch">pitch</div>
               <div id="osc2-fine" class="osc2-fine-position"></div><div class="osc2-label-fine">fine</div><div id="osc2-fine-dial"></div>
-          </div><!-- .osc2 -->
-          </div>
-          <div style="position: absolute; top: 5px; left: 0px;">
-            <div id="osc2-m-env" class="osc2-m-env-position"></div><div class="osc2-label-m-env">m.env</div>
-              <div id="osc2-a" class="a-position"><div class="osc2-a-label">a</div></div>
-              <div id="osc2-d" class="d-position"><div class="osc2-d-label">d</div></div>
-              <div id="osc2-amt" class="amt-position"><div class="osc2-amt-label">amt</div></div>
-          </div>
-        </div><!-- #oscilators -->
-        <div id="lfo">
-          <h2 class="h2-label">LFO</h2>
-        </div>
-      </div>
-      <div id="table-cell02" class="pr5">
-        <div id="amplifier">
-          <h2 class="h2-label">Amplifier</h2>
-        </div>
-        <div id="filter">
-          <h2 class="h2-label">Filter</h2>
-        </div>
-        <div id="arpeggiator">
-          <h2 class="h2-label">Arpeggiator</h2>
-        </div>
-      </div>
-      <div id="table-cell03" class="pr5">
-        <div id="effect">
-          <h2 class="h2-label">Effect</h2>
-        </div>
-        <div id="equalizer-pan">
-          <h2 class="h2-label">Equalizer / Pan</h2>
-        </div>
-        <div id="tempo-delay">
-          <h2 class="h2-label">Tempo Delay</h2>
-        </div>
-        <div id="chrous-flanger">
-          <h2 class="h2-label">Chrous / Flanger</h2>
-        </div>
-        <div id="voice">
-          <h2 class="h2-label">Voice</h2>
-        </div>
-      </div>
-      <div id="" class="pr5">
-        <div id="midi-while">
-          <h2 class="h2-label">MIDI-while</h2>
-        </div>
-        <div id="vol">
-          <h2 class="h2-label">vol</h2>
-        </div>
-      </div>
-    </div>
+              <div class="osc2-env">
+                <div id="osc2-m-env" class="osc2-m-env-position"></div><div class="osc2-label-m-env">m.env</div>
+                <div id="osc2-a" class="posi-a"><div class="osc2-a-label">a</div></div>
+                <div id="osc2-d" class="posi-d"><div class="osc2-d-label">d</div></div>
+                <div id="osc2-amt" class="posi-amt"><div class="osc2-amt-label">amt</div></div>
+              </div>
+            </div><!-- .osc2 -->
+      </div><!-- #oscilators -->
+      <div id="lfo">
+        <h2 class="h2-label">LFO</h2>
+      </div><!-- #lfo -->
+      <div id="amplifier">
+        <h2 class="h2-label">Amplifier</h2>
+      </div><!-- #amplifier-->
+      <div id="filter">
+        <h2 class="h2-label">Filter</h2>
+      </div><!-- #filter -->
+      <div id="arpeggiator">
+        <h2 class="h2-label">Arpeggiator</h2>
+      </div><!-- #arpeggiator -->
 
+      <div id="effect">
+        <h2 class="h2-label">Effect</h2>
+      </div><!-- #effect -->
+      <div id="equalizer-pan">
+        <h2 class="h2-label">Equalizer / Pan</h2>
+      </div><!-- #equalizer-pan -->
+      <div id="tempo-delay">
+        <h2 class="h2-label">Tempo Delay</h2>
+      </div><!-- #tempo-delay -->
+      <div id="chrous-flanger">
+        <h2 class="h2-label">Chrous / Flanger</h2>
+      </div><!-- #chrous-flanger -->
+      <div id="voice">
+        <h2 class="h2-label">Voice</h2>
+      </div><!-- #voice -->
+      <div id="wheel-midi">
+        <h2 class="h2-label">Wheel-MIDI</h2>
+      </div>
+      <div id="vol">
+        <h2 class="h2-label">vol</h2>
+      </div>
+      
     <script src="js/NexusUI.js"></script>
     <script src="js/ui.js"></script>
   </body>
-</html>
+ </html>

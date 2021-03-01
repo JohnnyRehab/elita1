@@ -1,102 +1,211 @@
 @charset "utf-8";
-body{
-  display: table;
-}
 
+/* ID Frame */
 #elita1{
-  display: table-cell;
-  width:   990px; /* expect size 1000px; */
-  height:  690px; /* expect size  700px; */
+  width: 990px; /* expect size 1000px; */
+  /* height:  690px; expect size  700px; */
   background-color: #C8C888;
   padding: 5px;
 }
+
 #title{
   padding: 0 5px;
   line-height: 2em;
   text-align: left;
+  padding-bottom: 3px;
+  border-bottom: 1px solid #030303;
 }
-#title h1, h2, h3{
-  display: inline-block;
-}
-#title .description{
-  text-align: center;
-  width: 600px;
-}
-#title .version, .date{
-  text-align: center;
-  padding: 0 1em;
-  background-color: #960000;
-  color: white;
-}
-#table-cell01, #table-cell02, #table-cell03, #table-cell04, #table-cell05 {
-  display: table-cell;
-}
+    #title h1, h2, h3{
+      display: inline-block;
+    }
+    #title .description{
+      text-align: center;
+      width: 600px;
+    }
+    #title .version, .date{
+      text-align: center;
+      padding: 0 1em;
+      background-color: #960000;
+      color: white;
+    }
 
 #oscillators{
-  width: 450px;
-  height: 310px;
+  position: absolute;
+  top: 50px;
+  left: 5px;
+  width: 480px;
+  height: 330px;
   border-left: 2px solid #030303;
-  margin-bottom: 10px;
 }
+
 #oscillators .osc{
   display: inline-block;
   margin-right: 3px;
 }
 
+#lfo{
+  position: absolute;
+  top: 390px;
+  left: 5px;
+  width: 480px;
+  height: 250px;
+  border-left: 2px solid #030303;
+}
+
 #amplifier{
+  position: absolute;
+  top: 50px;
+  left: 490px;
   width: 230px;
-  background-color: white;
+  height: 110px;
+  border-left: 2px solid #030303;
 }
 
 #filter{
-  /* width: 230px; */
-  background-color: white;
+  position: absolute;
+  top: 170px;
+  left: 490px;
+  width: 230px;
+  height: 210px;
+  border-left: 2px solid #030303;
+}
+
+#arpeggiator{
+  position: absolute;
+  top: 390px;
+  left: 490px;
+  width: 230px;
+  height: 250px;
+  border-left: 2px solid #030303;
 }
 
 #effect{
+  position: absolute;
+  top: 50px;
+  left: 725px;
   width: 230px;
-  background-color: white;
+  height: 85px;
+  border-left: 2px solid #030303;
+}
+#equalizer-pan{
+  position: absolute;
+  top: 145px;
+  left: 725px;
+  width: 230px;
+  height: 85px;
+  border-left: 2px solid #030303;
+}
+#tempo-delay{
+  position: absolute;
+  top: 240px;
+  left: 725px;
+  width: 230px;
+  height: 85px;
+  border-left: 2px solid #030303;
+}
+#chrous-flanger{
+  position: absolute;
+  top: 330px;
+  left: 725px;
+  width: 230px;
+  height: 85px;
+  border-left: 2px solid #030303;
+}
+#voice{
+  position: absolute;
+  top: 420px;
+  left: 725px;
+  width: 230px;
+  height: 300px;
+  border-left: 2px solid #030303;
 }
 
-#midi-while{
-  width: 670px;
+#wheel-midi{
+  position: absolute;
+  top: 645px;
+  left: 5px;
+  width: 715px;
+  height: 100px;
+  border-left: 2px solid #030303;
 }
 #vol{
-  width: 890px;
+  position: absolute;
+  top: 755px;
+  left: 5px;
+  width: 800px;
+  height: 100px;
+  border-left: 2px solid #030303;
+}
+#osc1-radio{
+  position: absolute;
+  top: 0px;
+  left: 35px;
+  width: 125px;
 }
 
-#osc1-radio, #osc1-sub-radio{
-  float: left;
-  width: 115px;
+/* Oscillators */
+.osc1{
+  position: absolute;
+  top: 45px;
+  border-bottom: 1px solid #030303;
+}
+
+.osc1-right{
+  position: absolute;
+  top: 5px;
+  left: 272px;
+  height: 80px;
+  border-left: 1px solid #030303;
+}
+
+#osc1-det{
+  position: absolute;
+  top: 5px;
+  left: 165px;
+}
+.posi-det{
+  position: absolute;
+  top: 47px;
+  left: 183px;
+}
+
+#osc1-fm{
+  position: absolute;
+  top: 5px;
+  left: 220px;
+}
+.posi-fm{
+  position: absolute;
+  top: 47px;
+  left: 237px;
+}
+
+.posi-sub{
+  position: absolute;
+  top: 0px;
+  left: 10px;
+}
+
+#osc1-sub{
+  position: absolute;
+  top: 20px;
+  left: 10px;
+}
+#osc1-sub-radio{
+  position: absolute;
+  top: 0px;
+  left: 60px;
+  width: 125px;
 }
 #osc1-sub-radio2{
-  /* width: 170px; */
-  margin-left: 60px
-}
-
-.osc1{
-  display: inline-block;
-  border-bottom: 1px solid #030303;
-  margin-top: 5px;
-  padding-bottom: 5px;
-}
-.osc1-radio{
-  margin: 0 5px 0 0;
-}
-.osc1-left{
-  float: left;
-}
-.osc1-right{
-  float: left;
-  border-left: 2px solid #010101;
-}
-
-#osc1-det, #osc1-fm, #osc1-sub{
-  display: inline-block;
+  position: absolute;
+  top: 64px;
+  left: 60px;
+  width: 200px;
 }
 
 .osc-label{
-  float: left;
+  position: absolute;
   font-size: 1.25em;
   font-weight: bold;
   padding: 1px 4px;
@@ -106,22 +215,23 @@ body{
 }
 
 .osc2{
-  display: inline-block;
+  border-top: 1px solid #030303;
   position: absolute;
-  top:  185px;
-  left:   5px;
+  top: 140px;
+  left: 0px;
+  width: 460px;
+  padding-top: 5px;
 }
-.osc2-radio2-ring-sync{
-  display: inline-block;
+#osc2-radio{
   position: absolute;
-  width: 300px;
-  top:  0px;
-  left: 150px;
+  top: 0px;
+  left: 35px;
+  width: 125px;
 }
 .osc2-label-ring{
   position: absolute;
-  top: 20px;
-  left: 0px;
+  top: 30px;
+  left: 166px;
   font-size: 1.25em;
   font-weight: bold;
   padding: 1px 6px 6px;
@@ -130,14 +240,14 @@ body{
 }
 .osc2-ring-position{
   position: absolute;
-  top: 0px;
-  left: 18px;
+  top: 8px;
+  left: 183px;
 }
 
 .osc2-label-sync{
   position: absolute;
-  top: 20px;
-  left: 60px;
+  top: 30px;
+  left: 230px;
   font-size: 1.25em;
   font-weight: bold;
   padding: 1px 6px 6px;
@@ -146,20 +256,19 @@ body{
 }
 .osc2-sync-position{
   position: absolute;
-  top: 0px;
-  left: 78px;
+  top: 8px;
+  left: 248px;
 }
 
 .osc2-track-position{
   position: absolute;
-  top: 63px;
+  top: 67px;
   left: 2px;
 }
-
 .osc2-label-track{
   position: absolute;
-  top: 57px;
-  left: 23px;
+  top: 63px;
+  left: 25px;
   font-size: 1.25em;
   font-weight: bold;
   padding: 1px 6px 5px;
@@ -169,57 +278,58 @@ body{
 
 .osc2-pitch-position{
   position: absolute;
-  top: 62px;
-  left: 100px;
+  top: 69px;
+  left: 104px;
 }
 #osc2-pitch-dial{
   position: absolute;
   top: 70px;
-  left: 120px
+  left: 123px
 }
 .osc2-label-pitch{
   position: absolute;
-  top: 90px;
-  left: 168px;
+  top: 92px;
+  left: 165px;
 }
 
 .osc2-fine-position{
   position: absolute;
-  top: 63px;
-  left: 220px;
+  top: 69px;
+  left: 218px;
 }
 #osc2-fine-dial{
   position: absolute;
   top: 70px;
-  left: 240px
+  left: 237px
 }
 .osc2-label-fine{
   position: absolute;
-  top: 90px;
-  left: 290px;
+  top: 92px;
+  left: 287px;
 }
 
+.osc2-env{
+  position: absolute;
+  top: 120px;
+  left: 0px;
+  width: 325px;
+  border-top: 1px solid #030303;
+}
 .osc2-m-env-position{
   position: absolute;
-  top: 315px;
-  left: 7px;
+  top: 20px;
+  left: 2px;
 }
 
 .osc2-label-m-env{
   position: absolute;
-  top: 308px;
-  left: 28px;
+  top: 14px;
+  left: 24px;
   font-size: 1.25em;
   font-weight: bold;
   padding: 1px 6px 5px;
   background-color: #3c3c3c;
   color: white;
-}
-
-.a-position{
-  position: absolute;
-  top: 305px;
-  left: 125px;
 }
 
 .osc2-a-label, .osc2-d-label, .osc2-amt-label{
@@ -228,19 +338,25 @@ body{
   left: 34px
 }
 
-.d-position{
+.posi-a{
   position: absolute;
-  top: 305px;
+  top: 11px;
+  left: 125px;
+}
+
+.posi-d{
+  position: absolute;
+  top: 11px;
   left: 180px;
 }
 
-.amt-position{
+.posi-amt{
   position: absolute;
-  top: 305px;
+  top: 11px;
   left: 237px;
 }
 
-
+/* General Use Class */
 .h2-label{
   display: block;
   font-size: 1.5em;
@@ -250,7 +366,6 @@ body{
   color: white;
 }
 
-/* General Use Class */
 .pr5{
   padding-right: 5px;
 }
@@ -264,31 +379,12 @@ body{
 .mr20{
   margin-right: 20px;
 }
-
-.mb3{
-  margin-bottom: 3px;
+.ml5{
+  margin-left: 5px;
 }
-
+.ml10{
+  margin-left: 10px;
+}
 .fs2em{
   font-size: 2em;
-}
-
-/*  2020年！clearfix最新の設定はこれ！
-    ref. 
-    https://arts-factory.net/clearfix/
-*/
-.clearfix:after {
-	content: "";
-	display: block;
-	clear: both;
-}
- 
-.clearfix:before {
-  content: "";
-	display: block;
-	clear: both;
-}
- 
-.clearfix {
-	display: block;
 }
