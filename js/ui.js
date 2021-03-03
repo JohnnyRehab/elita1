@@ -118,12 +118,23 @@ var dial = new Nexus.Dial('#osc2-amt',{
 })
 
 var number = new Nexus.Number('#osc2-num',{
-  'size': [60,30],
+  'size': [60,40],
   'value': 0,
   'min': 0,
   'max': 127,
   'step': 1
 })
+    var textbutton = new Nexus.TextButton('#key-up',{
+      'size': [20,18],
+      'state': false,
+      'text': '&and;'
+    })
+
+    var textbutton = new Nexus.TextButton('#key-down',{
+      'size': [20,18],
+      'state': false,
+      'text': '&or;'
+    })
 
 var dial = new Nexus.Dial('osc2-mix',{
   'size': [40,40],
