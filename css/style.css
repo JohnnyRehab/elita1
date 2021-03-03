@@ -356,6 +356,15 @@
   left: 237px;
 }
 
+#osc2-right{
+  position: absolute;
+  top: 144px;
+  left: 331px;
+  width: 140px;
+  height: 191px;
+  border: 1px solid #030303;
+}
+
 /* General Use Class */
 .h2-label{
   display: block;

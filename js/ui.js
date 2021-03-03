@@ -116,3 +116,51 @@ var dial = new Nexus.Dial('#osc2-amt',{
   'step': 0,
   'value': 0
 })
+
+var number = new Nexus.Number('#osc2-num',{
+  'size': [60,30],
+  'value': 0,
+  'min': 0,
+  'max': 127,
+  'step': 1
+})
+
+var dial = new Nexus.Dial('osc2-mix',{
+  'size': [40,40],
+  'interaction': 'radial', // "radial", "vertical", or "horizontal"
+  'mode': 'relative', // "absolute" or "relative"
+  'min': 0,
+  'max': 1,
+  'step': 0,
+  'value': 0
+})
+
+var dial = new Nexus.Dial('osc2-pw',{
+  'size': [40,40],
+  'interaction': 'radial', // "radial", "vertical", or "horizontal"
+  'mode': 'relative', // "absolute" or "relative"
+  'min': 0,
+  'max': 1,
+  'step': 0,
+  'value': 0
+})
+
+var dial = new Nexus.Dial('osc2-phase',{
+  'size': [40,40],
+  'interaction': 'radial', // "radial", "vertical", or "horizontal"
+  'mode': 'relative', // "absolute" or "relative"
+  'min': 0,
+  'max': 1,
+  'step': 0,
+  'value': 0
+})
+
+var dial = new Nexus.Dial('osc2-tune',{
+  'size': [40,40],
+  'interaction': 'radial', // "radial", "vertical", or "horizontal"
+  'mode': 'relative', // "absolute" or "relative"
+  'min': 0,
+  'max': 1,
+  'step': 0,
+  'value': 0
+})
