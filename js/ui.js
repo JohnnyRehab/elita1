@@ -118,7 +118,7 @@ var dial = new Nexus.Dial('#osc2-amt',{
 })
 
 var number = new Nexus.Number('#osc2-num',{
-  'size': [60,40],
+  'size': [70,40],
   'value': 0,
   'min': 0,
   'max': 127,

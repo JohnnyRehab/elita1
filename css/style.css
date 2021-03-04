@@ -146,15 +146,15 @@
 /* Oscillators */
 .osc1{
   position: absolute;
-  top: 45px;
+  top: 35px;
   border-bottom: 1px solid #030303;
 }
 
 .osc1-right{
   position: absolute;
-  top: 5px;
+  top: 0px;
   left: 272px;
-  height: 80px;
+  height: 90px;
   border-left: 1px solid #030303;
 }
 
@@ -217,7 +217,7 @@
 .osc2{
   border-top: 1px solid #030303;
   position: absolute;
-  top: 140px;
+  top: 130px;
   left: 0px;
   width: 460px;
   padding-top: 5px;
@@ -358,18 +358,64 @@
 
 #osc2-right{
   position: absolute;
-  top: 144px;
+  top: 135px;
   left: 331px;
   width: 140px;
-  height: 191px;
-  border: 1px solid #030303;
+  height: 200px;
+  border-left: 1px solid #030303;
+}
+
+.posi-num{
+  position: absolute;
+  top: 5px;
+  left: 5px;
+}
+.posi-key-up{
+  position: absolute;
+  top: 5px;
+  left: 82px;
+}
+.posi-key-down{
+  position: absolute;
+  top: 25px;
+  left: 82px;
+}
+.posi-key{
+  position: absolute;
+  top: 50px;
+  left: 23px;
+}
+.posi-shift{
+  position: absolute;
+  top: 50px;
+  left: 72px;
+}
+.posi-mix{
+  position: absolute;
+  top: 72px;
+  left: 15px;
+}
+.posi-pw{
+  position: absolute;
+  top: 72px;
+  left: 70px;
+}
+.posi-phase{
+  position: absolute;
+  top: 142px;
+  left: 15px;
+}
+.posi-tune{
+  position: absolute;
+  top: 142px;
+  left: 70px;
 }
 
 /* General Use Class */
 .h2-label{
   display: block;
-  font-size: 1.5em;
-  line-height: 1.5em;
+  font-size: 1.3em;
+  line-height: 1.4em;
   padding: 0 5px;
   background-color: #3c3c3c;
   color: white;
