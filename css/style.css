@@ -56,7 +56,7 @@
   position: absolute;
   top: 50px;
   left: 490px;
-  width: 230px;
+  width: 260px;
   height: 110px;
   border-left: 2px solid #030303;
 }
@@ -65,7 +65,7 @@
   position: absolute;
   top: 170px;
   left: 490px;
-  width: 230px;
+  width: 260px;
   height: 210px;
   border-left: 2px solid #030303;
 }
@@ -74,7 +74,7 @@
   position: absolute;
   top: 390px;
   left: 490px;
-  width: 230px;
+  width: 260px;
   height: 250px;
   border-left: 2px solid #030303;
 }
@@ -82,7 +82,7 @@
 #effect{
   position: absolute;
   top: 50px;
-  left: 725px;
+  left: 755px;
   width: 230px;
   height: 85px;
   border-left: 2px solid #030303;
@@ -90,7 +90,7 @@
 #equalizer-pan{
   position: absolute;
   top: 145px;
-  left: 725px;
+  left: 755px;
   width: 230px;
   height: 85px;
   border-left: 2px solid #030303;
@@ -98,7 +98,7 @@
 #tempo-delay{
   position: absolute;
   top: 240px;
-  left: 725px;
+  left: 755px;
   width: 230px;
   height: 85px;
   border-left: 2px solid #030303;
@@ -106,7 +106,7 @@
 #chrous-flanger{
   position: absolute;
   top: 330px;
-  left: 725px;
+  left: 755px;
   width: 230px;
   height: 85px;
   border-left: 2px solid #030303;
@@ -114,7 +114,7 @@
 #voice{
   position: absolute;
   top: 420px;
-  left: 725px;
+  left: 755px;
   width: 230px;
   height: 300px;
   border-left: 2px solid #030303;
@@ -409,6 +409,68 @@
   position: absolute;
   top: 142px;
   left: 70px;
+}
+
+/* #Amplifier */
+#Amp-A{
+  position: absolute;
+  top: 35px;
+  left: 5px;
+}
+.posi-A{
+  position: absolute;
+  top: 75px;
+  left: 18px;
+}
+#Amp-D{
+  position: absolute;
+  top: 35px;
+  left: 48px;
+}
+.posi-D{
+  position: absolute;
+  top: 75px;
+  left: 62px;
+}
+#Amp-S{
+  position: absolute;
+  top: 35px;
+  left: 91px;
+}
+.posi-S{
+  position: absolute;
+  top: 75px;
+  left: 105px;
+}
+#Amp-R{
+  position: absolute;
+  top: 35px;
+  left: 134px;
+}
+.posi-R{
+  position: absolute;
+  top: 75px;
+  left: 148px;
+}
+#Amp-Gain{
+  position: absolute;
+  top: 35px;
+  left: 178px;
+}
+.posi-Gain{
+  position: absolute;
+  top: 75px;
+  left: 178px;
+}
+#Amp-Vel{
+  position: absolute;
+  top: 35px;
+  left: 221px;
+}
+.posi-Vel{
+  position: absolute;
+  top: 75px;
+  left: 230px;
 }
 
 /* General Use Class */

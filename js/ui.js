@@ -175,3 +175,59 @@ var dial = new Nexus.Dial('osc2-tune',{
   'step': 0,
   'value': 0
 })
+
+/* #Amplifier */
+var dial = new Nexus.Dial('Amp-A',{
+  'size': [40,40],
+  'interaction': 'radial', // "radial", "vertical", or "horizontal"
+  'mode': 'relative', // "absolute" or "relative"
+  'min': 0,
+  'max': 1,
+  'step': 0,
+  'value': 0
+})
+var dial = new Nexus.Dial('Amp-D',{
+  'size': [40,40],
+  'interaction': 'radial', // "radial", "vertical", or "horizontal"
+  'mode': 'relative', // "absolute" or "relative"
+  'min': 0,
+  'max': 1,
+  'step': 0,
+  'value': 0
+})
+var dial = new Nexus.Dial('Amp-S',{
+  'size': [40,40],
+  'interaction': 'radial', // "radial", "vertical", or "horizontal"
+  'mode': 'relative', // "absolute" or "relative"
+  'min': 0,
+  'max': 1,
+  'step': 0,
+  'value': 0
+})
+var dial = new Nexus.Dial('Amp-R',{
+  'size': [40,40],
+  'interaction': 'radial', // "radial", "vertical", or "horizontal"
+  'mode': 'relative', // "absolute" or "relative"
+  'min': 0,
+  'max': 1,
+  'step': 0,
+  'value': 0
+})
+var dial = new Nexus.Dial('Amp-Gain',{
+  'size': [40,40],
+  'interaction': 'radial', // "radial", "vertical", or "horizontal"
+  'mode': 'relative', // "absolute" or "relative"
+  'min': 0,
+  'max': 1,
+  'step': 0,
+  'value': 0
+})
+var dial = new Nexus.Dial('Amp-Vel',{
+  'size': [40,40],
+  'interaction': 'radial', // "radial", "vertical", or "horizontal"
+  'mode': 'relative', // "absolute" or "relative"
+  'min': 0,
+  'max': 1,
+  'step': 0,
+  'value': 0
+})
