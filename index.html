@@ -91,80 +91,66 @@
         <div id="Amp-Vel"></div><span class="posi-Vel">Vel</span>
       </div><!-- #amplifier-->
       <div id="filter">
-        <h2 class="h2-label">Filter</h2>
-        <div class="panel filter-section">
-  <div class="panel-title">FILTER</div>
-    <div class="panel-content">
-        <div class="filter-controls-top">
-            <div class="selector-group">
-                <div class="label">TYPE</div>
-                <div class="type-buttons">
-                    <button class="btn-small active">LP12</button>
-                    <button class="btn-small">LP24</button>
-                    <button class="btn-small">HP</button>
-                    <button class="btn-small">BP</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="knob-row">
-            <div class="knob-group">
-                <div class="knob" id="filter-cutoff">
-                    <div class="knob-indicator"></div>
-                </div>
-                <div class="label">FRQ</div>
-            </div>
-            
-            <div class="knob-group">
-                <div class="knob" id="filter-res">
-                    <div class="knob-indicator"></div>
-                </div>
-                <div class="label">RES</div>
-            </div>
-
-            <div class="knob-group">
-                <div class="knob" id="filter-env-amt">
-                    <div class="knob-indicator"></div>
-                </div>
-                <div class="label">AMT</div>
-            </div>
-        </div>
-
-        <div class="envelope-row">
-            <div class="slider-group">
-                <div class="slider-vertical">
-                    <input type="range" min="0" max="127" value="0" orient="vertical">
-                </div>
-                <div class="label">A</div>
-            </div>
-            <div class="slider-group">
-                <div class="slider-vertical">
-                    <input type="range" min="0" max="127" value="64" orient="vertical">
-                </div>
-                <div class="label">D</div>
-            </div>
-            <div class="slider-group">
-                <div class="slider-vertical">
-                    <input type="range" min="0" max="127" value="127" orient="vertical">
-                </div>
-                <div class="label">S</div>
-            </div>
-            <div class="slider-group">
-                <div class="slider-vertical">
-                    <input type="range" min="0" max="127" value="20" orient="vertical">
-                </div>
-                <div class="label">R</div>
-            </div>
-        </div>
-        
-        <div class="filter-footer">
-            <div class="knob-group tiny">
-                <div class="knob x-small" id="filter-track"></div>
-                <div class="label">TRK</div>
-            </div>
-        </div>
+<div class="panel">
+  <h2>Filter</h2>
+  <div class="row">
+    <div class="column">
+      <div class="label">TYPE</div>
+      <div class="btn-group">
+        <button class="btn-small active" id="filter-type-lp12">LP12</button>
+        <button class="btn-small" id="filter-type-lp24">LP24</button>
+        <button class="btn-small" id="filter-type-hp">HP</button>
+        <button class="btn-small" id="filter-type-bp">BP</button>
+      </div>
     </div>
+
+    <div class="column">
+      <div class="control">
+        <div nx="dial" id="filter-cutoff" label="FRQ"></div>
+      </div>
+    </div>
+    <div class="column">
+      <div class="control">
+        <div nx="dial" id="filter-res" label="RES"></div>
+      </div>
+    </div>
+    <div class="column">
+      <div class="control">
+        <div nx="dial" id="filter-env-amt" label="AMT"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="column">
+      <div class="control">
+        <div nx="slider" id="filter-attack" label="A"></div>
+      </div>
+    </div>
+    <div class="column">
+      <div class="control">
+        <div nx="slider" id="filter-decay" label="D"></div>
+      </div>
+    </div>
+    <div class="column">
+      <div class="control">
+        <div nx="slider" id="filter-sustain" label="S"></div>
+      </div>
+    </div>
+    <div class="column">
+      <div class="control">
+        <div nx="slider" id="filter-release" label="R"></div>
+      </div>
+    </div>
+    
+    <div class="column">
+      <div class="control">
+        <div nx="dial" id="filter-track" label="TRK" style="width:30px;height:30px;"></div>
+      </div>
+    </div>
+  </div>
 </div>
+
       </div><!-- #filter -->
       <div id="arpeggiator">
         <h2 class="h2-label">Arpeggiator</h2>
