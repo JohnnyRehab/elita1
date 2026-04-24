@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELITA-1 Oscillator Section</title>
+    <script src="https://cdn.jsdelivr.net/npm/nexusui@latest/dist/NexusUI.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Basic layout styling to mimic the original repo */
+        body { background-color: #222; color: #eee; font-family: sans-serif; }
+        .panel { border: 1px solid #444; padding: 15px; margin: 10px; border-radius: 5px; background: #2a2a2a; }
+        .row { display: flex; flex-wrap: wrap; margin-bottom: 15px; }
+        .column { display: flex; flex-direction: column; align-items: center; margin: 0 10px; }
+        .label { font-size: 10px; text-transform: uppercase; margin-top: 5px; color: #aaa; }
+        h2 { border-bottom: 1px solid #555; padding-bottom: 5px; color: #ff4500; }
+        .btn-group { display: flex; gap: 2px; }
+        button { cursor: pointer; background: #444; color: white; border: none; padding: 5px; }
+        button.active { background: #ff4500; }
+    </style>
+</head>
+<body>
+
+    <div id="synth-container">
+        <div class="panel" id="oscillator-section">
+            <h2>Oscillators</h2>
+
+            <div class="row">
+                <div class="column">
+                    <div class="label">OSC 1 Wave</div>
+                    <div class="btn-group">
+                        <button class="active">SIN</button>
+                        <button>TRI</button>
+                        <button>SAW</button>
+                        <button>SQR</button>
+                    </div>
+                </div>
+                <div class="column">
+                    <div nx="dial" id="osc1-detune" label="det"></div>
+                </div>
+                <div class="column">
+                    <div nx="dial" id="osc1-fm" label="FM"></div>
+                </div>
+                <div class="column">
+                    <div nx="dial" id="osc1-sub" label="sub"></div>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px dashed #444;">
+
+            <div class="row">
+                <div class="column">
+                    <div class="label">OSC 2 Wave</div>
+                    <div class="btn-group">
+                        <button>SIN</button>
+                        <button>TRI</button>
+                        <button class="active">SAW</button>
+                        <button>SQR</button>
+                    </div>
+                </div>
+                <div class="column">
+                    <div nx="dial" id="osc2-pitch" label="pitch"></div>
+                </div>
+                <div class="column">
+                    <div nx="dial" id="osc2-fine" label="fine"></div>
+                </div>
+                <div class="column">
+                    <div class="label">MOD</div>
+                    <div class="btn-group">
+                        <button id="ring-mod">RING</button>
+                        <button id="sync-mod">SYNC</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="column">
+                    <div nx="dial" id="osc-mix" label="mix"></div>
+                </div>
+                <div class="column">
+                    <div nx="dial" id="osc-pw" label="p/w"></div>
+                </div>
+                <div class="column">
+                    <div nx="dial" id="osc-phase" label="phase"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // NexusUI automatically looks for elements with 'nx' attribute 
+        // when the page loads. 
+        
+        nx.onload = function() {
+            // Set global colors to match the Synth1/Elita1 theme
+            nx.colorize("accent", "#ff4500"); // Red-orange color
+            nx.colorize("fill", "#333");
+            
+            // Example: Listen for changes on Osc 1 Detune
+            // osc1-detune will be a Nexus Dial object
+            if (typeof osc1_detune !== 'undefined') {
+                osc1_detune.on('change', function(v) {
+                    console.log("Osc 1 Detune Value:", v);
+                });
+            }
+        };
+    </script>
+</body>
+</html>
