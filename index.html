@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="css/reset.css">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <link rel="stylesheet" type="text/css" href="css/compact.css">
+    <link rel="stylesheet" type="text/css" href="css/params.css">
+    <title>ELITA-1 (parameter list mock)</title>
+  </head>
+  <body>
+   <div id="stage">
+    <div id="main">
+    <div id="elita1">
+      <div id="title">
+        <span><img src="img/e1.png" alt="ELITA-1 icon" width="37" height="37"></span>
+        <h1 class="fs2em">ELITA-1</h1>
+        <h2 class="description">Powered by NexusUI.js and Tone.js</h2>
+        <h3 class="version">ver 0.0.1</h3>
+        <h3 class="date">2021.01.30</h3>
+      </div>
+
+      <div id="table-cell01">
+        <div id="oscillators"><h2 class="h2-label">Oscillators</h2></div>
+        <div id="lfo"><h2 class="h2-label">LFO</h2></div>
+      </div>
+      <div id="table-cell02">
+        <div id="amplifier"><h2 class="h2-label">Amplifier</h2></div>
+        <div id="filter"><h2 class="h2-label">Filter</h2></div>
+        <div id="arpeggiator"><h2 class="h2-label">Arpeggiator</h2></div>
+      </div>
+      <div id="table-cell03">
+        <div id="effect"><h2 class="h2-label">Effect</h2></div>
+        <div id="equalizer-pan"><h2 class="h2-label">Equalizer / Pan</h2></div>
+        <div id="tempo-delay"><h2 class="h2-label">Tempo Delay</h2></div>
+        <div id="chrous-flanger"><h2 class="h2-label">Chorus / Flanger</h2></div>
+      </div>
+
+      <div id="bottom">
+        <div id="voice"><h2 class="h2-label">Voice</h2></div>
+        <div id="patchbox">
+          <div id="vol"></div>
+          <div id="lcdbox"><div id="pline"><span id="pname">Init patch</span><span id="pidx"></span></div><div id="pinfo">&nbsp;</div></div>
+          <div id="pbtns">
+            <div id="pnav"><button type="button" class="btn" id="pprev" title="previous patch (↑)">▲</button><button type="button" class="btn" id="pnext" title="next patch (↓)">▼</button></div>
+            <button type="button" class="btn" id="dirbtn" title="choose a folder of .sy1 files">folder…</button>
+            <label class="btn">file<input id="file" type="file" accept=".sy1"></label>
+          </div>
+          <input id="dirin" type="file" webkitdirectory multiple hidden>
+        </div>
+      </div>
+      <div id="keybar">
+        <div id="kbinfo"><button type="button" class="sb" id="octdn">&lt;</button><b id="oct"></b><button type="button" class="sb" id="octup">&gt;</button><span id="vc"></span></div>
+        <div id="kb"></div>
+      </div>
+    </div>
+    <div id="scopebox"><canvas id="scope" width="1920" height="240"></canvas><span id="scopelbl">waveform (output)</span></div>
+    </div>
+    <aside id="plist" aria-label="patch parameters"></aside>
+   </div>
+    <script src="js/Tone.js"></script>
+    <script src="js/NexusUI.js"></script>
+    <script src="js/ui-compact.js"></script>
+    <script src="js/engine.js"></script>
+    <script src="js/keys.js"></script>
+    <script src="js/patches.js"></script>
+    <script src="js/scope.js"></script>
+    <script src="js/params.js"></script>
+  </body>
+</html>
