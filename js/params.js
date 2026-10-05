@@ -31,6 +31,17 @@
     '<div class="tools"><label><input type="checkbox" id="onlych"> changed only</label><button type="button" id="pcopy">copy text</button></div>' +
     '<div class="scroll" id="pscroll"></div>' +
     '<div class="foot"><span><i class="sw1" style="background:var(--led)"></i>changed from default</span><span style="opacity:.6">– not used = engine ignores it</span></div>';
+  // allowed range per parameter (default 0..127). Typed values are clamped to it.
+  const RNG = {9: [-24, 24], 93: [1, 8], 94: [1, 32], 0: [0, 3], 1: [0, 4], 14: [0, 4], 31: [1, 4], 32: [0, 3], 38: [0, 2], 41: [0, 7], 46: [0, 7], 42: [0, 5], 47: [0, 5], 64: [1, 4], 71: [0, 2], 78: [0, 6], 82: [0, 2], 96: [0, 3], 97: [0, 1]};
+  [4, 6, 7, 10, 24, 57, 58, 59, 65, 66, 67, 68, 69, 70, 73, 74, 77].forEach(n => RNG[n] = [0, 1]);
+  const rng = no => RNG[no] || [0, 127];
+  function commit(o, inp, text) {
+    const t = String(text).trim(), n = /^[-+]?\d+$/.test(t) ? parseInt(t, 10) : NaN;
+    if (isNaN(n)) { inp.value = E.params[o.no]; return; }                       // not a number: put the old value back
+    const [lo, hi] = rng(o.no), v = Math.max(lo, Math.min(hi, n));
+    inp.value = v;
+    if (v !== E.params[o.no]) { E.set(o.no, v); E.onChange && E.onChange(o.no, v); }   // set = move the knob, onChange = tell the engine
+  }
   const sc = $('pscroll'), rows = [];
   SEC.forEach(([title, groups]) => {
     const s = document.createElement('section'); s.innerHTML = '<h3>' + title + '</h3>'; sc.append(s);
@@ -40,6 +51,11 @@
         const r = document.createElement('div'); r.className = 'r';
         r.innerHTML = '<span class="no">' + (no === 'vol' ? '' : '#' + no) + '</span><span class="nm">' + label + '</span><span class="v"><em></em><input class="vi" type="text" inputmode="numeric" spellcheck="false" autocomplete="off" aria-label="' + label + '"></span>';
         s.append(r); const inp = r.querySelector('input'), o = {no, label, dec, r, v: r.lastChild, em: r.querySelector('em'), inp, sec: s, title};
+        const neg = rng(no)[0] < 0;                                  // only parameters with a negative range (key shift) accept a minus sign
+        inp.maxLength = 3;
+        const clean = s => { s = String(s).normalize('NFKC'); return neg ? (s.startsWith('-') ? '-' : '') + s.replace(/[^0-9]/g, '') : s.replace(/[^0-9]/g, ''); };   // NFKC turns full-width digits into plain ones
+        inp.addEventListener('beforeinput', e => { if (e.data && !e.isComposing && clean(e.data) !== e.data) e.preventDefault(); });   // letters and symbols never get in
+        inp.addEventListener('input', () => { const c = clean(inp.value); if (c !== inp.value) inp.value = c; });                      // safety net for paste / IME
         inp.addEventListener('focus', () => inp.select());
         inp.addEventListener('blur', () => commit(o, inp, inp.value));
         inp.addEventListener('keydown', e => {
@@ -52,17 +68,6 @@
       });
     });
   });
-  // allowed range per parameter (default 0..127). Typed values are clamped to it.
-  const RNG = {9: [-24, 24], 93: [1, 8], 94: [1, 32], 0: [0, 3], 1: [0, 4], 14: [0, 4], 31: [1, 4], 32: [0, 3], 38: [0, 2], 41: [0, 7], 46: [0, 7], 42: [0, 5], 47: [0, 5], 64: [1, 4], 71: [0, 2], 78: [0, 6], 82: [0, 2], 96: [0, 3], 97: [0, 1]};
-  [4, 6, 7, 10, 24, 57, 58, 59, 65, 66, 67, 68, 69, 70, 73, 74, 77].forEach(n => RNG[n] = [0, 1]);
-  const rng = no => RNG[no] || [0, 127];
-  function commit(o, inp, text) {
-    const t = String(text).trim(), n = /^[-+]?\d+$/.test(t) ? parseInt(t, 10) : NaN;
-    if (isNaN(n)) { inp.value = E.params[o.no]; return; }                       // not a number: put the old value back
-    const [lo, hi] = rng(o.no), v = Math.max(lo, Math.min(hi, n));
-    inp.value = v;
-    if (v !== E.params[o.no]) { E.set(o.no, v); E.onChange && E.onChange(o.no, v); }   // set = move the knob, onChange = tell the engine
-  }
   let q = false, used = null;
   function render() {
     q = false;

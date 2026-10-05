@@ -34,3 +34,14 @@
 
 /* BPM box: the generic ".btn input" rule makes inputs invisible overlays (for the file picker); the BPM number must stay visible */
 .btn.bpmbox input{ position:static; inset:auto; opacity:1; width:44px; cursor:text; }
+
+/* update-history window (click "UPDATED" in the title) */
+#title .date:hover{ filter:brightness(1.25); }
+#histdlg{ width:min(560px, 92vw); max-height:80vh; padding:0; border:1px solid var(--dk); background:var(--bg); color:var(--ink); font:12px/1.5 "Hiragino Sans","Yu Gothic UI",system-ui,sans-serif; }
+#histdlg::backdrop{ background:rgba(0,0,0,.45); }
+#histdlg .hh{ display:flex; justify-content:space-between; align-items:center; padding:4px 8px; background:var(--hd); border-bottom:1px solid var(--dk); font-size:13px; }
+#histdlg .hh button{ background:var(--dk); color:#fff; font:700 10px inherit; padding:2px 8px; margin-left:4px; border-radius:3px; cursor:pointer; box-shadow:inset 0 -2px 0 #222; }
+#histdlg .hb{ padding:6px 14px 12px; overflow:auto; max-height:calc(80vh - 34px); }
+#histdlg h2, #histdlg h3{ margin:8px 0 4px; font-size:14px; background:#960000; color:#fff; padding:1px 8px; display:inline-block; }
+#histdlg ul{ margin:4px 0 8px; padding-left:18px; list-style:disc; } #histdlg li{ margin:2px 0; }
+#histdlg code{ font:11px ui-monospace,Menlo,Consolas,monospace; background:rgba(0,0,0,.08); padding:0 3px; }
