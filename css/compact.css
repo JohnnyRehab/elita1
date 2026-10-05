@@ -3,7 +3,7 @@
 #elita1{ gap:4px; padding:4px; }
 #title{ display:flex; align-items:center; gap:8px; padding:0 2px; line-height:1.2; }
 #title .description{ flex:1; width:auto; text-align:left; font-size:10px; opacity:.75; }
-#title .version, #title .date{ padding:1px 10px; }
+#title .version, #title .date, #title .date_old{ padding:1px 10px; }
 
 /* every panel is a flex column and grows so the three columns end on the same line */
 #table-cell01, #table-cell02, #table-cell03{ gap:4px; }

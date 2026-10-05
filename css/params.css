@@ -19,9 +19,11 @@
 #plist .no{ opacity:.55; text-align:right; }
 #plist .nm{ white-space:nowrap; overflow:hidden; background:linear-gradient(to right,transparent 0,transparent 0); }
 #plist .v{ text-align:right; min-width:92px; }
-#plist .v i{ font-style:normal; display:inline-block; min-width:30px; padding:0 4px; background:var(--lcd); color:var(--lcdf); }
+#plist .v .vi{ width:38px; padding:0 4px; margin:0; border:0; border-radius:0; font:inherit; text-align:right; background:var(--lcd); color:var(--lcdf); box-shadow:none; }
+#plist .v .vi:focus{ outline:2px solid var(--on); outline-offset:-1px; background:#000; }
 #plist .v em{ font-style:normal; opacity:.8; margin-right:4px; }
-#plist .r.ch .v i{ background:var(--led); color:#ffd9d0; box-shadow:0 0 0 1px var(--on) inset; }
+#plist .v em[hidden]{ display:none; }
+#plist .r.ch .v .vi{ background:var(--led); color:#ffd9d0; box-shadow:0 0 0 1px var(--on) inset; }
 #plist .r.un .nm, #plist .r.un .no{ opacity:.45; }
 #plist .r.un .nm::after{ content:" – not used"; font-size:9px; }
 #plist .r.off{ display:none; }
@@ -29,3 +31,6 @@
 #plist.onlych h4:not(.has), #plist.onlych section:not(.has){ display:none; }
 #plist .foot{ padding:3px 8px; border-top:1px solid var(--dk); background:var(--hd); font:10px "Hiragino Sans","Yu Gothic UI",system-ui,sans-serif; display:flex; gap:10px; }
 #plist .foot .sw1{ display:inline-block; width:9px; height:9px; vertical-align:-1px; margin-right:3px; border:1px solid var(--dk); }
+
+/* BPM box: the generic ".btn input" rule makes inputs invisible overlays (for the file picker); the BPM number must stay visible */
+.btn.bpmbox input{ position:static; inset:auto; opacity:1; width:44px; cursor:text; }

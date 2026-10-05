@@ -6,7 +6,7 @@
 (function () {
   const P = {}, DEF = {}, ctl = {}, NAME = {};
   let silent = false, sect = '';
-  const E = window.ELITA = {params: P, onChange: null, set, loadSy1};
+  const E = window.ELITA = {params: P, names: NAME, defaults: DEF, onChange: null, set, loadSy1};
   const $ = id => document.getElementById(id);
   const h = (tag, cls, p, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; p.appendChild(e); return e; };
   const sec = (id, name) => { sect = name; return h('div', 'body', $(id)); };
@@ -22,7 +22,7 @@
   const choose = (no, v) => { set(no, v); emit(no, v); };
 
   /* ---- widgets ---- */
-  function knob(p, no, label, def = 0, size = 34) {
+  function knob(p, no, label, def = 0, size = 30) {
     const w = cell(p, label);
     const d = new Nexus.Dial(w, {size: [size, size], interaction: 'vertical', mode: 'relative', min: 0, max: 127, step: 1, value: def});
     d.colorize('accent', '#ff4a36'); d.colorize('fill', '#2b2b2b');
@@ -77,34 +77,31 @@
 
   /* ---- value lists (display order; raw values follow Synth1 files) ---- */
   const W1 = [{v: 0, img: 'sin'}, {v: 1, img: 'saw'}, {v: 3, img: 'triangle'}, {v: 2, img: 'square'}];
+  const WS = [{v: 0, img: 'sin'}, {v: 2, img: 'saw'}, {v: 1, img: 'triangle'}, {v: 3, img: 'square'}];   // sub wave: 1 = triangle (confirmed), 2/3 unverified
   const W2 = [{v: 3, img: 'triangle'}, {v: 2, img: 'square'}, {v: 1, img: 'saw'}, {v: 4, t: 'noise'}];
 
-  /* ---- Oscillators ---- */
+  /* ---- Oscillators (compact: knobs 30px, 3 stretched rows) ---- */
   let o = sec('oscillators', 'osc'), g = h('div', 'osc', o), r, c;
-  r = row(g, 'top'); h('span', 'tag', r, '1'); lamps(r, 0, W1, 1, 'g2', 'osc1 wave'); knob(r, 76, 'det'); knob(r, 45, 'FM');
-  r = row(g, 'top'); knob(r, 95, 'sub'); lamps(r, 96, W1, 1, 'g2', 'sub wave'); lamps(r, 97, T(['0oct', '-1oct']), 1, '', 'sub oct');
-  c = col(g);
-  r = row(c, 'top'); h('span', 'tag', r, '2'); lamps(r, 1, W2, 1, 'g2', 'osc2 wave'); sw(r, 7, 'ring'); sw(r, 6, 'sync');
-  r = row(c); sw(r, 4, 'track', 1, 'g'); knob(r, 2, 'pitch', 64); knob(r, 3, 'fine', 64);
-  c = col(g);
-  num(c, 9, 'key shift', -24, 24, 0);
-  r = row(c); knob(r, 5, 'mix'); knob(r, 8, 'p/w', 127);
-  r = row(c); knob(r, 91, 'phase'); knob(r, 72, 'tune', 64);
+  r = row(g); h('span', 'tag', r, '1'); lamps(r, 0, W1, 1, 'g2', 'osc1 wave'); knob(r, 76, 'det'); knob(r, 45, 'FM');
+  r = row(g); knob(r, 95, 'sub'); lamps(r, 96, WS, 1, 'g2', 'sub wave'); lamps(r, 97, T(['0oct', '-1oct']), 1, '', 'sub oct');
+  c = col(g, 'o2'); r = row(c); h('span', 'tag', r, '2'); lamps(r, 1, W2, 1, 'g2', 'osc2 wave'); knob(r, 2, 'pitch', 64); knob(r, 3, 'fine', 64);
+  r = row(c, 'sw3'); sw(r, 7, 'ring'); sw(r, 6, 'sync'); sw(r, 4, 'track', 1, 'g');
+  c = col(g); num(c, 9, 'key shift', -24, 24, 0);
+  r = row(c); knob(r, 5, 'mix'); knob(r, 8, 'p/w', 127); knob(r, 91, 'phase'); knob(r, 72, 'tune', 64);
   r = row(g, 'span'); sw(r, 10, 'm.env'); knob(r, 12, 'A'); knob(r, 13, 'D', 64); knob(r, 11, 'amt', 64);
   lamps(r, 71, T(['osc2', 'FM', 'p/w']), 0, 'h', 'm.env dest', 'dest.');
 
   /* ---- LFO 1 | shared destination names | LFO 2 ---- */
   o = sec('lfo', 'lfo'); g = h('div', 'lfo7', o);
   const LD = ['osc2', 'osc1,2', 'filter', 'amp', 'p/w', 'FM', 'pan'];
-  const LT = [{img: 'saw'}, {img: 'triangle'}, {img: 'sin'}, {img: 'square'}, 's&h', 'rnd'];
+  const LT = [{img: 'saw'}, {img: 'triangle'}, {img: 'square'}, 's&h', {img: 'sin'}, 'rnd'];   // 1 = triangle, 2 = pulse, 3 = s&h confirmed on Synth1
   const l1 = h('div', 'lb', g), mid = h('div', 'lc', g), l2 = h('div', 'lb rr', g);
   [[l1, 1, 57, 42, 41, 43, 44, 67, 68, 2], [l2, 2, 58, 47, 46, 48, 49, 69, 70, 3]].forEach(([b, n, on, ty, ds, sp, am, ts, ks, dd]) => {
     sect = 'lfo' + n;
     const q = row(b); if (n === 1) { sw(q, on, 'on', 0, 'n', '1'); lcd(q, ty, 'type', LT, 2); cycle(q, ds, [1, 2, 3, 4, 5, 6, 7], 'dst'); }
     else { cycle(q, ds, [1, 2, 3, 4, 5, 6, 7], 'dst'); lcd(q, ty, 'type', LT, 2); sw(q, on, 'on', 0, 'n', '2'); }
     const k = row(b); knob(k, sp, 'spd', 64); knob(k, am, 'amt', 32);
-    h('span', 'sync', b, '-sync-');
-    const s = row(b); sw(s, ts, 'tempo', 0, 'g'); sw(s, ks, 'key', 0, 'g');
+    const s = col(k, 'sws'); h('span', 'sync', s, '-sync-'); sw(s, ts, 'tempo', 0, 'g'); sw(s, ks, 'key', 0, 'g');
     P[ds] = dd;
   });
   LD.forEach((t, i) => { radio(mid, 41, i + 1, null); h('span', '', mid, t); radio(mid, 46, i + 1, null); });
@@ -114,30 +111,30 @@
   o = sec('amplifier', 'amp'); r = row(o);
   knob(r, 25, 'A'); knob(r, 26, 'D', 64); knob(r, 27, 'S', 100); knob(r, 28, 'R', 40); knob(r, 29, 'gain', 100); knob(r, 30, 'vel', 64);
 
-  /* ---- Filter ---- */
+  /* ---- Filter (type row stays under frq / res as requested) ---- */
   o = sec('filter', 'filter'); r = row(o);
   knob(r, 15, 'A'); knob(r, 16, 'D', 70); knob(r, 17, 'S', 40); knob(r, 18, 'R', 40); knob(r, 21, 'amt', 85);
   r = row(o);
   knob(r, 19, 'frq', 80); knob(r, 20, 'res', 20); knob(r, 23, 'sat'); knob(r, 22, 'trk'); sw(r, 24, 'vel', 1, 'g');
-  r = row(o, 'ftype');   // type button + its lamps side by side, below frq / res / sat / trk
+  r = row(o, 'ftype');
   cycle(r, 14, [0, 1, 2, 3, 4], 'type');
   lamps(r, 14, T(['LP12', 'LP24', 'HP12', 'BP12', 'LPDL']), 1, 'h', 'type');
 
-  /* ---- Arpeggiator ---- */
-  o = sec('arpeggiator', 'arp'); r = row(o, 'top');
-  sw(r, 59, 'on', 0, 'r', 'ON'); knob(r, 33, 'beat', 64); knob(r, 34, 'gate', 64);
-  r = row(o, 'top');
-  lamps(r, 31, T(['updown', 'up', 'down', 'random']), 0, '', 'type', 'type');
+  /* ---- Arpeggiator (one row: ON | type | range | beat | gate) ---- */
+  o = sec('arpeggiator', 'arp'); r = row(o);
+  sw(r, 59, 'on', 0, 'r', 'ON');
+  lamps(r, 31, [{v: 1, t: 'up'}, {v: 2, t: 'down'}, {v: 3, t: 'u/d'}, {v: 4, t: 'rnd'}], 1, '', 'type', 'type');
   lamps(r, 32, T(['1oct', '2oct', '3oct', '4oct']), 0, '', 'range', 'range');
+  num(r, 33, 'beat', 0, 18, 11); knob(r, 34, 'gate', 64);
 
   /* ---- Effect / Equalizer-Pan / Tempo Delay / Chorus ---- */
   o = sec('effect', 'fx'); r = row(o);
   sw(r, 77, 'on', 0, 'r', 'ON'); lcd(r, 78, 'type', ['a.d.1', 'a.d.2', 'd.d.', 'deci.', 'r.m.', 'comp.', 'phaser']);
-  knob(r, 79, 'ctl1', 0, 30); knob(r, 80, 'ctl2', 0, 30); knob(r, 81, 'level', 0, 30);
+  knob(r, 79, 'ctl1', 0, 28); knob(r, 80, 'ctl2', 0, 28); knob(r, 81, 'level', 0, 28);
   o = sec('equalizer-pan', 'eq'); r = row(o);
   knob(r, 61, 'freq', 64); knob(r, 62, 'level', 64); knob(r, 63, 'Q', 64); knob(r, 60, 'tone', 64); knob(r, 90, 'L-R', 64);
   o = sec('tempo-delay', 'delay'); r = row(o, 'split');
-  c = col(r, 'sw'); sw(c, 65, 'on', 0, 'r', 'ON'); lcd(c, 82, 'type', ['ST', 'X', 'PP']);   // indicator + ON stacked vertically
+  c = col(r, 'sw'); sw(c, 65, 'on', 0, 'r', 'ON'); lcd(c, 82, 'type', ['ST', 'X', 'PP']);
   r = row(r, 'kn');
   knob(r, 35, 'time', 8, 28); knob(r, 83, 'sprd', 0, 28); knob(r, 36, 'fdbk', 40, 28); knob(r, 98, 'tone', 0, 28); knob(r, 37, 'd/w', 20, 28);
   o = sec('chrous-flanger', 'chorus'); r = row(o, 'split');
@@ -145,11 +142,11 @@
   r = row(r, 'kn');
   knob(r, 52, 'time', 64, 28); knob(r, 53, 'deph', 64, 28); knob(r, 54, 'rate', 50, 28); knob(r, 55, 'fdbk', 64, 28); knob(r, 56, 'levl', 64, 28);
 
-  /* ---- Voice ---- */
-  o = sec('voice', 'voice'); r = row(o, 'top');
+  /* ---- Voice (bottom strip, one row) ---- */
+  o = sec('voice', 'voice'); r = row(o);
   lamps(r, 38, T(['poly', 'mono', 'legato']), 0, '', 'mode'); num(r, 94, 'poly', 1, 32, 16);
-  r = row(o); sw(r, 73, 'unison', 0, 'g'); knob(r, 39, 'porta'); sw(r, 74, 'auto', 0, 'g');
-  r = row(o); num(r, 93, 'num', 1, 8, 4); knob(r, 75, 'det', 40); knob(r, 92, 'phase'); knob(r, 84, 'sprd', 64); knob(r, 85, 'pitch', 24);
+  sw(r, 73, 'unison', 0, 'g'); knob(r, 39, 'porta'); sw(r, 74, 'auto', 0, 'g');
+  num(r, 93, 'num', 1, 8, 4); knob(r, 75, 'det', 40); knob(r, 92, 'phase'); knob(r, 84, 'sprd', 64); knob(r, 85, 'pitch', 24);
 
   /* ---- Bottom: vol ---- */
   sect = 'vol'; knob($('vol'), 'vol', 'vol', 100, 40);

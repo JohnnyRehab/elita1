@@ -1,4 +1,4 @@
-/* Patch browser: pick a folder of .sy1 files, step through them with the arrow keys (↑/← previous, ↓/→ next; Home/End first/last).
+/* Patch browser: pick a folder of .sy1 files, step through them with the arrow keys (↑ next, ↓ previous).
    Chrome / Edge: folder picker (File System Access API). Other browsers: folder upload dialog (webkitdirectory). */
 (function () {
   const E = window.ELITA, $ = id => document.getElementById(id);
@@ -33,16 +33,14 @@
   }
   $('dirbtn').onclick = pickDir;
   $('dirin').onchange = e => { setFiles([...e.target.files]); e.target.value = ''; };
-  $('pprev').onclick = () => show(cur - 1);
-  $('pnext').onclick = () => show(cur + 1);
+  $('pprev').onclick = () => show(cur - 1);   // ▼ (same direction as the ↓ key)
+  $('pnext').onclick = () => show(cur + 1);   // ▲ (same direction as the ↑ key)
   // single files / drops also join the list so the arrows keep working
   $('file').addEventListener('change', e => { const f = e.target.files[0]; if (f) { list = [f]; cur = 0; $('pidx').textContent = ''; } });
   addEventListener('keydown', e => {
     if (e.ctrlKey || e.metaKey || e.altKey || !list.length) return;
     const t = e.target.tagName; if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
-    const k = {ArrowUp: -1, ArrowLeft: -1, PageUp: -1, ArrowDown: 1, ArrowRight: 1, PageDown: 1}[e.key];
+    const k = {ArrowUp: 1, ArrowDown: -1}[e.key];
     if (k) { e.preventDefault(); show(cur + k); }
-    else if (e.key === 'Home') { e.preventDefault(); show(0); }
-    else if (e.key === 'End') { e.preventDefault(); show(list.length - 1); }
   });
 })();

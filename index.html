@@ -15,9 +15,10 @@
       <div id="title">
         <span><img src="img/e1.png" alt="ELITA-1 icon" width="37" height="37"></span>
         <h1 class="fs2em">ELITA-1</h1>
-        <h2 class="description">Powered by NexusUI.js and Tone.js</h2>
-        <h3 class="version">ver 0.0.1</h3>
-        <h3 class="date">2021.01.30</h3>
+        <h2 class="description">With NexusUI.js and Tone.js and Claude Ai</h2>
+        <h3 class="version">ver 0.3.0</h3>
+        <h3 class="date">UPDATED: 2026.10.5</h3>
+        <h3 class="date_old">Start from: 2021.01.30</h3>
       </div>
 
       <div id="table-cell01">
@@ -42,8 +43,9 @@
           <div id="vol"></div>
           <div id="lcdbox"><div id="pline"><span id="pname">Init patch</span><span id="pidx"></span></div><div id="pinfo">&nbsp;</div></div>
           <div id="pbtns">
-            <div id="pnav"><button type="button" class="btn" id="pprev" title="previous patch (↑)">▲</button><button type="button" class="btn" id="pnext" title="next patch (↓)">▼</button></div>
+            <div id="pnav"><button type="button" class="btn" id="pnext" title="next patch (↑ key)">▲</button><button type="button" class="btn" id="pprev" title="previous patch (↓ key)">▼</button></div>
             <button type="button" class="btn" id="dirbtn" title="choose a folder of .sy1 files">folder…</button>
+            <span class="btn bpmbox" title="tempo for LFO tempo-sync and Delay time (Synth1 takes it from the host)">BPM <input id="bpm" type="number" min="40" max="300" value="120"></span>
             <label class="btn">file<input id="file" type="file" accept=".sy1"></label>
           </div>
           <input id="dirin" type="file" webkitdirectory multiple hidden>
@@ -60,7 +62,7 @@
    </div>
     <script src="js/Tone.js"></script>
     <script src="js/NexusUI.js"></script>
-    <script src="js/ui-compact.js"></script>
+    <script src="js/ui.js"></script>
     <script src="js/engine.js"></script>
     <script src="js/keys.js"></script>
     <script src="js/patches.js"></script>
