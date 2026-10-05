@@ -509,9 +509,17 @@ async function start() {
   return started;
 }
 window.ELITA.onChange = () => refresh();
-{ const b = document.getElementById('bpm');           // tempo box: drives LFO tempo-sync and delay time
-  const set = v => { v = Math.max(40, Math.min(300, +v || 120)); BPM = v; if (voices) refresh(); };
-  if (b) b.addEventListener('input', () => set(b.value));
-  window.ELITA.setBpm = v => { set(v); if (b) b.value = BPM; }; }
-window.ELITA.engine = {lfoHz: () => lfos.map(l => l.frequency.value), start, noteOn, noteOff, allOff, voices: () => voices, wave: () => wave, POLY, used: usedSet, unisonMax: UNI_MAX};
+{ const b = document.getElementById('bpm');           // tempo box: drives LFO tempo-sync, delay time and the arpeggiator. Whole numbers only (digits, 40..300)
+  const set = v => { v = Math.max(40, Math.min(300, parseInt(v, 10) || 120)); BPM = v; if (voices) refresh(); return v; };
+  if (b) {
+    const clean = s => String(s).normalize('NFKC').replace(/[^0-9]/g, '');
+    b.addEventListener('beforeinput', ev => { if (ev.data && !ev.isComposing && clean(ev.data) !== ev.data) ev.preventDefault(); });   // letters, signs and '.' never get in
+    b.addEventListener('input', () => { const c = clean(b.value); if (c !== b.value) b.value = c; if (c) set(c); });
+    b.addEventListener('blur', () => { b.value = set(b.value || BPM); });                   // empty / out of range -> back to a valid value
+    b.addEventListener('keydown', ev => { if (ev.key === 'Enter') b.blur(); else if (ev.key === 'ArrowUp' || ev.key === 'ArrowDown') { ev.preventDefault(); b.value = set((parseInt(b.value, 10) || BPM) + (ev.key === 'ArrowUp' ? 1 : -1) * (ev.shiftKey ? 10 : 1)); } ev.stopPropagation(); });
+    b.addEventListener('focus', () => b.select());
+  }
+  window.ELITA.setBpm = v => { v = set(v); if (b) b.value = v; }; }
+window.ELITA.bpm = () => BPM;
+window.ELITA.engine = {rawOn: voiceOn, rawOff: voiceOff, lfoHz: () => lfos.map(l => l.frequency.value), start, noteOn, noteOff, allOff, voices: () => voices, wave: () => wave, POLY, used: usedSet, unisonMax: UNI_MAX};
 })();

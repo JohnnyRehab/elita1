@@ -152,14 +152,28 @@
   sect = 'vol'; knob($('vol'), 'vol', 'vol', 100, 40);
 
   /* ---- patch loading ---- */
+  E.extra = {}; E.patch = {name: 'Init patch', color: 'default'};   // extra: numbers in the file that have no control on the panel (e.g. #40, #50, #51, #86-89), kept so export can write them back
   function loadSy1(text) {
     const L = text.replace(/\r/g, '').split('\n');
     Object.keys(DEF).forEach(no => { if (no !== 'vol') set(no, DEF[no]); });   // old patches lack some numbers
+    E.extra = {};
     let n = 0;
-    L.slice(3).forEach(l => { const m = l.match(/^\s*(\d+)\s*,\s*(-?\d+)\s*$/); if (m && ctl[+m[1]]) { set(+m[1], +m[2]); n++; } });
+    L.slice(3).forEach(l => { const m = l.match(/^\s*(\d+)\s*,\s*(-?\d+)\s*$/); if (!m) return; if (ctl[+m[1]]) { set(+m[1], +m[2]); n++; } else E.extra[+m[1]] = +m[2]; });
     Object.keys(P).forEach(no => { if (E.onChange && no !== 'vol') E.onChange(+no, P[no]); });
-    return {name: L[0] || '(no name)', ver: (L[2] || '').replace(/^ver=/, ''), applied: n};
+    const cm = (L[1] || '').match(/^color=(.*)$/);
+    E.patch = {name: L[0] || '(no name)', color: cm ? cm[1].trim() : 'default'};
+    return {name: E.patch.name, ver: (L[2] || '').replace(/^ver=/, ''), applied: n};
   }
+  // Export the current panel as a Synth1 .sy1 text (CRLF, factory order for #0-72, then #73-98). ver=113 because #73-98 are included.
+  const ORDER = [0, 45, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 71, 72, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 59, 31, 32, 33, 34, 65, 35, 36, 37, 66, 64, 52, 53, 54, 55, 56, 60, 61, 62, 63, 38, 39, 40, 50, 51, 57, 41, 42, 43, 44, 67, 68, 58, 46, 47, 48, 49, 69, 70];
+  const SPARE = {40: 12, 50: 127, 51: 127};                      // used when the loaded patch did not carry them (factory values)
+  E.exportSy1 = function (name) {
+    const ascii = s => String(s).replace(/[\r\n]/g, ' ').replace(/[^\x20-\x7e]/g, '_').trim();   // Synth1 reads names in the system code page, so keep the file ASCII
+    const order = ORDER.slice(); for (let i = 73; i <= 98; i++) order.push(i);
+    const out = [ascii(name || E.patch.name) || 'patch', 'color=' + ascii(E.patch.color || 'default'), 'ver=113'];
+    order.forEach(no => { const v = ctl[no] ? P[no] : (E.extra[no] != null ? E.extra[no] : SPARE[no]); if (v != null && !isNaN(v)) out.push(no + ',' + v); });
+    return out.join('\r\n') + '\r\n';
+  };
   async function readFile(f) {
     const b = await f.arrayBuffer();
     let t; try { t = new TextDecoder('utf-8', {fatal: true}).decode(b); } catch (e) { t = new TextDecoder('shift_jis').decode(b); }
