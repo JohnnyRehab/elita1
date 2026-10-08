@@ -45,3 +45,9 @@
 #histdlg h2, #histdlg h3{ margin:8px 0 4px; font-size:14px; background:#960000; color:#fff; padding:1px 8px; display:inline-block; }
 #histdlg ul{ margin:4px 0 8px; padding-left:18px; list-style:disc; } #histdlg li{ margin:2px 0; }
 #histdlg code{ font:11px ui-monospace,Menlo,Consolas,monospace; background:rgba(0,0,0,.08); padding:0 3px; }
+
+/* Page layout: the whole UI (panel + parameter list) sits in the middle of the browser window with a 10px margin on every side.
+   margin:auto centres it both ways; when the window is smaller than the UI it starts at the 10px margin and scrolls. */
+html{ min-height:100%; }
+body{ box-sizing:border-box; min-height:100vh; min-width:max-content; padding:10px; display:flex; }
+#stage{ margin:auto; }

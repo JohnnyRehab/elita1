@@ -17,7 +17,7 @@ const FTYPE_DUMMY=0;
 // Provisional curves (to be tuned by ear)
 const time = v => 0.001 * Math.pow(8000, v / 127);   // 1 ms .. 8 s
 const CUT_OCT = Math.log2(400);                        // octaves covered by the frequency knob
-const cutoff = v => 50 * Math.pow(2, CUT_OCT * v / 127);    // 20 Hz .. 20 kHz
+const cutoff = v => 50 * Math.pow(2, CUT_OCT * v / 127);    // 50 Hz .. 20 kHz (provisional)
 
 class Voice {
   constructor(out, lfos) {
@@ -126,13 +126,17 @@ class Voice {
     this.setPitch(p);
   }
   setPitch(p, glide = 0) {
+    const tune = (p[72] - 64) / 64 * 100 / 1200;                  // #72 tune: +-100 cents on both oscillators (provisional range)
+    const det = p[76] / 127 * 50 / 1200;                          // #76 det: 0..+50 cents added to OSC1 (provisional range)
     const st = Math.max(-24, Math.min(24, p[2] - 64)) + (p[3] - 64) / 100;
-    const f2 = this.freq * Math.pow(2, st / 12);
+    const base2 = p[4] ? this.freq : Tone.Frequency(60, 'midi').toFrequency();   // #4 OSC2 kbd track off: fixed pitch (C4) regardless of the key
+    const f1 = this.freq * Math.pow(2, tune + det);
+    const f2 = base2 * Math.pow(2, st / 12 + tune);
     const set = (sig, f) => glide > 0 ? sig.rampTo(f, glide) : (sig.value = f);
-    set(this.o1.frequency, this.freq);
+    set(this.o1.frequency, f1);
     set(this.so.frequency, this.freq * (p[97] ? 0.5 : 1));
     set(this.o2.frequency, f2);
-    if (this.sy) [['f1', this.freq], ['f2', f2]].forEach(([n, f]) => {
+    if (this.sy) [['f1', f1], ['f2', f2]].forEach(([n, f]) => {
       const a = this.sy.parameters.get(n), t = Tone.now();
       a.cancelScheduledValues(t); a.setValueAtTime(a.value, t);
       if (glide > 0) a.linearRampToValueAtTime(f, t + glide); else a.setValueAtTime(f, t);
