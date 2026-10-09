@@ -84,7 +84,7 @@
   let o = sec('oscillators', 'osc'), g = h('div', 'osc', o), r, c;
   r = row(g); h('span', 'tag', r, '1'); lamps(r, 0, W1, 1, 'g2', 'osc1 wave'); knob(r, 76, 'det'); knob(r, 45, 'FM');
   r = row(g); knob(r, 95, 'sub'); lamps(r, 96, WS, 1, 'g2', 'sub wave'); lamps(r, 97, T(['0oct', '-1oct']), 1, '', 'sub oct');
-  c = col(g, 'o2'); r = row(c); h('span', 'tag', r, '2'); lamps(r, 1, W2, 1, 'g2', 'osc2 wave'); knob(r, 2, 'pitch', 64); knob(r, 3, 'fine', 64);
+  c = col(g, 'o2'); r = row(c); h('span', 'tag', r, '2'); lamps(r, 1, W2, 1, 'g2', 'osc2 wave'); knob(r, 2, 'pitch', 64); knob(r, 3, 'fine', 66);
   r = row(c, 'sw3'); sw(r, 7, 'ring'); sw(r, 6, 'sync'); sw(r, 4, 'track', 1, 'g');
   c = col(g); num(c, 9, 'key shift', -24, 24, 0);
   r = row(c); knob(r, 5, 'mix'); knob(r, 8, 'p/w', 127); knob(r, 91, 'phase'); knob(r, 72, 'tune', 64);
@@ -129,7 +129,7 @@
 
   /* ---- Effect / Equalizer-Pan / Tempo Delay / Chorus ---- */
   o = sec('effect', 'fx'); r = row(o);
-  sw(r, 77, 'on', 0, 'r', 'ON'); lcd(r, 78, 'type', ['a.d.1', 'a.d.2', 'd.d.', 'deci.', 'r.m.', 'comp.', 'phaser']);
+  sw(r, 77, 'on', 0, 'r', 'ON'); lcd(r, 78, 'type', ['a.d.1', 'a.d.2', 'd.d.', 'deci.', 'r.m.', 'comp.', 'ph.1', 'ph.2', 'ph.3', 'ph.4']);
   knob(r, 79, 'ctl1', 0, 28); knob(r, 80, 'ctl2', 0, 28); knob(r, 81, 'level', 0, 28);
   o = sec('equalizer-pan', 'eq'); r = row(o);
   knob(r, 61, 'freq', 64); knob(r, 62, 'level', 64); knob(r, 63, 'Q', 64); knob(r, 60, 'tone', 64); knob(r, 90, 'L-R', 64);

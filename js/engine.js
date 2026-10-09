@@ -177,7 +177,10 @@ class Voice {
   setPitch(p, glide = 0) {
     const tune = (p[72] - 64) / 64 * 100 / 1200;                  // #72 tune: +-100 cents on both oscillators (provisional range)
     const det = p[76] / 127 * 50 / 1200;                          // #76 det: 0..+50 cents added to OSC1 (provisional range)
-    const st = Math.max(-24, Math.min(24, p[2] - 64)) + (p[3] - 64) / 100;
+    // #2 OSC2 pitch: 0..127 -> -60..+60 semitones (64 = centre), rounded to whole semitones. The 128 factory patches support this scale:
+    // 77 -> +12, 89 -> +24, 102 -> +36 (octaves). #3 fine: 66 = no offset, 1 cent per step (66 is the factory value in 55 of 128 patches; scale provisional).
+    const semi = Math.round(p[2] <= 64 ? -60 + p[2] * 60 / 64 : (p[2] - 64) * 60 / 63);
+    const st = semi + (p[3] - 66) / 100;
     const base2 = p[4] ? this.freq : Tone.Frequency(60, 'midi').toFrequency();   // #4 OSC2 kbd track off: fixed pitch (C4) regardless of the key
     const f1 = this.freq * Math.pow(2, tune + det);
     const f2 = base2 * Math.pow(2, st / 12 + tune);
@@ -237,34 +240,94 @@ const SYNC_SRC = `class S extends AudioWorkletProcessor {
     return true;
   }
 }
-registerProcessor('sync-osc', S);`;
+registerProcessor('sync-osc', S);
+class D extends AudioWorkletProcessor {
+  constructor() { super(); this.hold = 1; this.lv = 32768; this.c = [0, 0]; this.h = [0, 0]; this.port.onmessage = e => { this.hold = e.data.hold; this.lv = e.data.lv; }; }
+  process(i, o) {
+    const inp = i[0], out = o[0];
+    for (let ch = 0; ch < out.length; ch++) {
+      const x = inp[ch] || inp[0], y = out[ch];
+      if (!x) { y.fill(0); continue; }
+      for (let n = 0; n < y.length; n++) {
+        this.c[ch] += 1;
+        if (this.c[ch] >= this.hold) { this.c[ch] -= this.hold; this.h[ch] = Math.round(Math.max(-1, Math.min(1, x[n])) * this.lv) / this.lv; }
+        y[n] = this.h[ch];
+      }
+    }
+    return true;
+  }
+}
+registerProcessor('decimator', D);`;
 
-// Effect section (#77-81), distortion types only: 0 a.d.1 / 1 a.d.2 / 2 d.d. (type numbering follows the panel order; the other types are not implemented yet and pass through).
-// ctl1 = drive, ctl2 = low-pass cutoff, level = dry/wet balance. Curves are provisional.
+// Effect section (#77-81): 0 a.d.1 / 1 a.d.2 / 2 d.d. / 3 deci. / 4 r.m. / 5 comp. / 6-9 ph.1-4 (numbering follows the panel order, a guess).
+// Distortions: ctl1 = drive, ctl2 = low-pass cutoff, level = dry/wet balance. Other types: see applyFxSection. All curves and ranges are provisional.
 const FX_K = 8;                                           // the shaper sees x*FX_K (its input range is -1..1), the pre gain is drive/FX_K
 const FX_CURVES = [
   x => Math.tanh(x + 0.35) - Math.tanh(0.35),             // a.d.1: asymmetric soft clip (even harmonics); the DC offset is removed by the high-pass
   x => Math.tanh(x),                                      // a.d.2: symmetric soft clip
   x => Math.round(Math.max(-1, Math.min(1, x * 1.3)) * 96) / 96,   // d.d.: hard clip with a fine (about 7 bit) step
 ];
+const PH_STAGES = [2, 4, 8, 12];                         // ph.1..ph.4 = 1 / 2 / 4 / 6 notch stages (2 all-pass filters each)
 function makeFx() {
   const G = v => new Tone.Gain(v);
-  const f = {input: G(1), dry: G(1), pre: G(1 / FX_K), wet: G(0), post: G(1), out: G(1), curve: -1,
+  const f = {input: G(1), dry: G(1), pre: G(1 / FX_K), wet: G(0), post: G(1), out: G(1), curve: -1, phN: 0,
     shaper: new Tone.WaveShaper(x => x, 4096), hp: new Tone.Filter(20, 'highpass'), lp: new Tone.Filter(20000, 'lowpass')};
   f.input.connect(f.dry); f.dry.connect(f.out);
   f.input.chain(f.pre, f.shaper, f.hp, f.lp, f.post, f.wet, f.out);
+  // deci.: sample-rate / bit reduction in an AudioWorklet (bypassed if the worklet could not be loaded)
+  f.gDeci = G(0);
+  if (SYNC_OK) {
+    f.dc = Tone.getContext().createAudioWorkletNode('decimator', {numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2], channelCount: 2, channelCountMode: 'explicit'});
+    f.dcIn = G(4); f.dcOut = G(0.25);                      // the signal is small, so scale it up before quantizing (keeps few-bit settings audible)
+    f.input.connect(f.dcIn); Tone.connect(f.dcIn, f.dc); Tone.connect(f.dc, f.dcOut); f.dcOut.connect(f.gDeci); f.gDeci.connect(f.out);
+  }
+  // r.m.: ring modulation with an internal sine
+  f.rmOsc = new Tone.Oscillator(200, 'sine').start(); f.rmMul = new Tone.Multiply(0); f.gRm = G(0);
+  f.rmOsc.connect(f.rmMul.factor); f.input.chain(f.rmMul, f.gRm, f.out);
+  // comp.
+  f.comp = new Tone.Compressor({threshold: -20, ratio: 4, attack: 0.01, release: 0.15, knee: 6}); f.cmk = G(1); f.gComp = G(0);
+  f.input.chain(f.comp, f.cmk, f.gComp, f.out);
+  // ph.1-4: chain of 12 all-pass filters (the first N are used), swept by an LFO, with feedback through a one-block delay
+  f.phIn = G(1); f.phOut = G(1); f.gPh = G(0);
+  f.ap = Array.from({length: 12}, () => new Tone.Filter({type: 'allpass', frequency: 600, Q: 0.7}));
+  f.phLfo = new Tone.LFO({frequency: 0.5, min: -300, max: 300});
+  f.phFb = G(0); f.phDel = new Tone.Delay(0.003, 0.01);
+  f.input.connect(f.phIn); f.phOut.chain(f.gPh, f.out);
+  f.phOut.chain(f.phFb, f.phDel, f.phIn);
+  f.ap.forEach(a => f.phLfo.connect(a.frequency));
   return f;
 }
+function phBuild(n) {                                      // connect the first n all-pass filters
+  fx.ap.forEach(a => a.disconnect()); try { fx.phIn.disconnect(fx.ap[0]); } catch (e) { /* first call: not connected yet */ }
+  fx.phIn.connect(fx.ap[0]); for (let i = 0; i < n - 1; i++) fx.ap[i].connect(fx.ap[i + 1]); fx.ap[n - 1].connect(fx.phOut);
+  fx.phN = n;
+}
 function applyFxSection(p) {
-  const ty = p[78] | 0, ok = p[77] && ty >= 0 && ty < FX_CURVES.length;
-  if (ok && fx.curve !== ty) { fx.shaper.setMap(x => FX_CURVES[ty](x * FX_K)); fx.curve = ty; }
-  const drive = Math.pow(40, p[79] / 127), lvl = ok ? p[81] / 127 : 0;
+  const ty = p[78] | 0, on = !!p[77], c1 = p[79] / 127, c2 = p[80] / 127, lv = p[81] / 127;
+  const dist = on && ty >= 0 && ty < FX_CURVES.length, deci = on && ty === 3 && !!fx.dc, rm = on && ty === 4, cmp = on && ty === 5, ph = on && ty >= 6 && ty <= 9;
+  if (dist && fx.curve !== ty) { fx.shaper.setMap(x => FX_CURVES[ty](x * FX_K)); fx.curve = ty; }
+  const drive = Math.pow(40, c1);
   fx.pre.gain.value = drive / FX_K;
   fx.post.gain.value = 1 / Math.pow(drive, 0.55);          // keep the loudness roughly constant as the drive rises
-  fx.lp.frequency.value = 500 * Math.pow(40, p[80] / 127); // 500 Hz .. 20 kHz
+  fx.lp.frequency.value = 500 * Math.pow(40, c2);          // 500 Hz .. 20 kHz
   fx.hp.frequency.value = ty === 0 ? 120 : 20;             // a.d.1 loses its low end (negative feedback)
-  fx.dry.gain.value = Math.cos(lvl * Math.PI / 2); fx.wet.gain.value = Math.sin(lvl * Math.PI / 2);
-  fx.on = !!ok; fx.type = ty;
+  if (deci) fx.dc.port.postMessage({hold: Math.pow(100, 1 - c1), lv: Math.pow(2, Math.round(1 + c2 * 15) - 1)});   // ctl1: 44.1 kHz .. ~441 Hz, ctl2: 1 .. 16 bits
+  fx.rmOsc.frequency.value = 20 * Math.pow(250, c1);       // r.m.: 20 Hz .. 5 kHz
+  { const d = cmp ? c1 : 0, thr = -4 - d * 40, ratio = 1.5 + d * 14;                // comp.: ctl1 = depth, ctl2 = attack (1 .. 100 ms)
+    fx.comp.threshold.value = thr; fx.comp.ratio.value = ratio; fx.comp.attack.value = 0.001 * Math.pow(100, c2);
+    fx.cmk.gain.value = 1; }                                // (Web Audio's DynamicsCompressor already applies its own automatic make-up gain)
+  if (ph) {                                                // ph.n: ctl1 = LFO depth, ctl2 = LFO speed, level = feedback
+    const n = PH_STAGES[ty - 6]; if (fx.phN !== n) phBuild(n);
+    fx.phLfo.min = -c1 * 550; fx.phLfo.max = c1 * 550; fx.phLfo.frequency.value = 0.05 * Math.pow(160, c2);
+    fx.phFb.gain.value = lv * 0.85;
+    if (fx.phLfo.state !== 'started') fx.phLfo.start();
+  } else if (fx.phLfo.state === 'started') fx.phLfo.stop();
+  const cs = Math.cos(lv * Math.PI / 2), sn = Math.sin(lv * Math.PI / 2);
+  const mixed = dist || deci || rm || cmp;                 // level = dry / wet balance (phasers: level is the feedback and the mix is fixed)
+  fx.dry.gain.value = mixed ? cs : ph ? 0.55 : 1;
+  fx.wet.gain.value = dist ? sn : 0; fx.gRm.gain.value = rm ? sn : 0; fx.gComp.gain.value = cmp ? sn : 0;
+  fx.gPh.gain.value = ph ? 0.55 : 0; fx.gDeci.gain.value = deci ? sn : 0;
+  fx.on = dist || deci || rm || cmp || ph; fx.type = ty;
 }
 
 async function initAudio() {
@@ -285,7 +348,7 @@ async function initAudio() {
   toneLo = new Tone.Filter({type: 'lowshelf', frequency: 300, gain: 0}); toneHi = new Tone.Filter({type: 'highshelf', frequency: 3000, gain: 0});
   fx = makeFx();
   // Tone's mono-by-default nodes would fold the stereo unison (#84) down to mono: let them pass 2 channels
-  [eq, toneLo, toneHi, panner, lim, clip, fx.shaper, fx.hp, fx.lp].forEach(n => [n.input, n.output, n._panner, n._shaper, ...(n._filters || [])].forEach(x => {
+  [eq, toneLo, toneHi, panner, lim, clip, fx.shaper, fx.hp, fx.lp, fx.comp, ...fx.ap].forEach(n => [n.input, n.output, n._panner, n._shaper, ...(n._filters || [])].forEach(x => {
     if (x && typeof x.channelCount === 'number') { try { x.channelCount = 2; x.channelCountMode = 'max'; } catch (e) { /* fixed by the node */ } }
   }));
   master.chain(fx.input);
@@ -546,7 +609,7 @@ function chainRows() {
     {stage: 'Delay', state: on(P[65]), detail: `type ${['ST', 'X', 'PP'][delay.type] || delay.type}, wet ${r3(delay.wetAmt)}, time ${r3(delay.time)}s (R ×${r3(delay.dr.delayTime.value / delay.dl.delayTime.value)}), feedback ${r3(delay.fb)}, tone LP ${Math.round(delay.lpL.frequency.value)}Hz`},
     {stage: 'Pan', state: Math.abs(panner.pan.value) > 0.01 ? 'ON' : 'center', detail: `pan ${r3(panner.pan.value)}`},
     {stage: 'Limiter → SoftClip(tanh)', state: 'ON', detail: 'safety'},
-    {stage: 'Effect section (#77-81)', state: fx.on ? 'ON' : P[77] ? 'ON (type not implemented, passes through)' : 'off', detail: `type ${['a.d.1', 'a.d.2', 'd.d.'][fx.type] || fx.type}, drive x${r3(Math.pow(40, P[79] / 127))}, LP ${Math.round(fx.lp.frequency.value)}Hz, level ${r3(P[81] / 127)} (placed before the EQ)`},
+    {stage: 'Effect section (#77-81)', state: fx.on ? 'ON' : P[77] ? 'ON (deci. unavailable: AudioWorklet failed, passes through)' : 'off', detail: `type ${['a.d.1', 'a.d.2', 'd.d.', 'deci.', 'r.m.', 'comp.', 'ph.1', 'ph.2', 'ph.3', 'ph.4'][fx.type] || fx.type}, ctl1 ${P[79]}, ctl2 ${P[80]}, level ${P[81]} (placed before the EQ)`},
     {stage: 'Arpeggiator (#59, 31-34)', state: P[59] ? 'ON (ignored)' : 'off', detail: 'not implemented'}
   ];
 }

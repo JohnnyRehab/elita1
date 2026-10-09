@@ -5,7 +5,7 @@
   const L = (...a) => a, onoff = ['off', 'on'];
   const W1 = {0: 'sine', 1: 'saw', 2: 'pulse', 3: 'tri'}, W2 = {0: 'sine?', 1: 'saw', 2: 'pulse', 3: 'tri', 4: 'noise'};
   const LD = ['none', 'osc2', 'osc1,2', 'filter', 'amp', 'p/w', 'FM', 'pan'], LT = ['saw', 'tri', 'pulse', 's&h', 'sine', 'rnd'];
-  const FT = ['LP12', 'LP24', 'HP12', 'BP12', 'LPDL'], FX = ['a.d.1', 'a.d.2', 'd.d.', 'deci.', 'r.m.', 'comp.', 'phaser'];
+  const FT = ['LP12', 'LP24', 'HP12', 'BP12', 'LPDL'], FX = ['a.d.1', 'a.d.2', 'd.d.', 'deci.', 'r.m.', 'comp.', 'ph.1', 'ph.2', 'ph.3', 'ph.4'];
   const T = a => v => a[v], X = a => v => a[v];
   // [no, label, decoder?]   section → optional sub-groups
   const SEC = [
@@ -32,7 +32,7 @@
     '<div class="scroll" id="pscroll"></div>' +
     '<div class="foot"><span><i class="sw1" style="background:var(--led)"></i>changed from default</span><span style="opacity:.6">– not used = engine ignores it</span></div>';
   // allowed range per parameter (default 0..127). Typed values are clamped to it.
-  const RNG = {9: [-24, 24], 93: [1, 8], 94: [1, 32], 0: [0, 3], 1: [0, 4], 14: [0, 4], 31: [1, 4], 32: [0, 3], 38: [0, 2], 41: [0, 7], 46: [0, 7], 42: [0, 5], 47: [0, 5], 64: [1, 4], 71: [0, 2], 78: [0, 6], 82: [0, 2], 96: [0, 3], 97: [0, 1]};
+  const RNG = {9: [-24, 24], 93: [1, 8], 94: [1, 32], 0: [0, 3], 1: [0, 4], 14: [0, 4], 31: [1, 4], 32: [0, 3], 38: [0, 2], 41: [0, 7], 46: [0, 7], 42: [0, 5], 47: [0, 5], 64: [1, 4], 71: [0, 2], 78: [0, 9], 82: [0, 2], 96: [0, 3], 97: [0, 1]};
   [4, 6, 7, 10, 24, 57, 58, 59, 65, 66, 67, 68, 69, 70, 73, 74, 77].forEach(n => RNG[n] = [0, 1]);
   const rng = no => RNG[no] || [0, 127];
   function commit(o, inp, text) {
