@@ -6,7 +6,9 @@
 (function () {
   const P = {}, DEF = {}, ctl = {}, NAME = {};
   let silent = false, sect = '';
-  const E = window.ELITA = {params: P, names: NAME, defaults: DEF, onChange: null, set, loadSy1};
+  const E = window.ELITA = {params: P, names: NAME, defaults: DEF, onChange: null, set, loadSy1, dials: []};
+  const cssv = (n, fb) => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || fb;
+  E.recolor = () => E.dials.forEach(d => { d.colorize('accent', cssv('--knob-acc', '#ff4a36')); d.colorize('fill', cssv('--knob', '#2b2b2b')); });   // called by js/theme.js
   const $ = id => document.getElementById(id);
   const h = (tag, cls, p, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; p.appendChild(e); return e; };
   const sec = (id, name) => { sect = name; return h('div', 'body', $(id)); };
@@ -25,7 +27,7 @@
   function knob(p, no, label, def = 0, size = 30) {
     const w = cell(p, label);
     const d = new Nexus.Dial(w, {size: [size, size], interaction: 'vertical', mode: 'relative', min: 0, max: 127, step: 1, value: def});
-    d.colorize('accent', '#ff4a36'); d.colorize('fill', '#2b2b2b');
+    d.colorize('accent', cssv('--knob-acc', '#ff4a36')); d.colorize('fill', cssv('--knob', '#2b2b2b')); E.dials.push(d);
     const put = v => { v = Math.max(0, Math.min(127, Math.round(v))); silent = true; d.value = v; silent = false; emit(no, v); };
     d.on('change', v => emit(no, Math.round(v)));
     w.addEventListener('dblclick', () => put(DEF[no]));

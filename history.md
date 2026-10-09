@@ -3,6 +3,12 @@
 バージョンを上げるときは、ここに「何をしたか」を追記します（新しいものが上）。
 バージョンの数字は Claude が判断して上げ、上げる前に確認を取ります。表示は `index.html` のバージョン表示と UPDATED の日付です。
 
+## ver 0.5.5 — 2026.10.9
+
+- **フッターを追加**: オシロスコープの下に、本家「Synth1」（作者 Daichi / Ichiro Toda 氏）への謝辞と、公式ホームページ（Daichi's Lab）へのリンクを表示。ELITA-1 が非公式の似せた作りで、本家とは無関係であることも明記。配色はテーマに従います。
+- `index.html` にフッターの要素を追加、`css/params.css` にスタイルを追加。
+- README を更新（謝辞）。
+
 ## ver 0.5.4 — 2026.10.9
 
 - **Effect 部の残りの type を実装**（`#78` = 3〜9）。
@@ -12,6 +18,9 @@
   - **ph.1〜ph.4**（6〜9）: 1 / 2 / 4 / 6 段のフェイザー。ctl1 = LFO の深さ、ctl2 = LFO の速さ、level = フィードバック。
 - これで Effect 部（`#77`〜`#81`）の全 type が動きます。type の番号、カーブ、範囲はすべて暫定です。
 - `index.html` のタイトルタグから「(parameter list mock)」を削除（ユーザー版を採用）。
+- **配色テーマ機能**（バージョンは据え置き）: 標準 4 テーマ（Classic / Dark / Midnight / Light）、色ごとのカラーピッカー、リセット、`.json` の書き出しと読み込み、ブラウザへの保存。Patch Parameters 下部の「theme」ボタンから。
+  - 直書きだった色を CSS 変数に移した（`style.css` / `compact.css` / `params.css` / `history.js` / `log.js`）。つまみ（`ui.js`）とオシロスコープ（`scope.js`）も変数を読む。
+  - 新規: `css/themes.css`、`js/theme.js`。`index.html` に 2 行追加。
 - README を更新。
 
 ## ver 0.5.3 — 2026.10.9

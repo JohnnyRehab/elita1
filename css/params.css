@@ -4,26 +4,26 @@
 #plist{ width:380px; flex:none; display:flex; flex-direction:column; background:var(--bg); border:1px solid var(--dk); height:var(--mainh, 613px); font:11px/1.35 ui-monospace,"SF Mono",Menlo,Consolas,monospace; color:var(--ink); }
 #plist .ph{ padding:4px 8px; background:var(--hd); border-bottom:1px solid var(--dk); font:700 13px "Hiragino Sans","Yu Gothic UI",system-ui,sans-serif; display:flex; justify-content:space-between; align-items:center; }
 #plist .ph small{ font:10px monospace; opacity:.7; font-weight:400; }
-#plist .pn{ margin:5px; padding:4px 8px; background:var(--lcd); color:var(--lcdf); border:1px solid #000; }
+#plist .pn{ margin:5px; padding:4px 8px; background:var(--lcd); color:var(--lcdf); border:1px solid var(--lcd-edge); }
 #plist .pn b{ display:block; font-size:14px; font-weight:400; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 #plist .pn span{ font-size:10px; opacity:.75; }
 #plist .tools{ display:flex; gap:4px; padding:0 5px 5px; align-items:center; font:10px "Hiragino Sans","Yu Gothic UI",system-ui,sans-serif; }
 #plist .tools label{ display:flex; gap:3px; align-items:center; cursor:pointer; margin-right:auto; }
-#plist .tools button{ background:var(--dk); color:#fff; font:700 10px inherit; padding:2px 8px; border-radius:3px; box-shadow:inset 0 -2px 0 #222; cursor:pointer; }
+#plist .tools button{ background:var(--dk); color:var(--on-dk); font:700 10px inherit; padding:2px 8px; border-radius:3px; box-shadow:inset 0 -2px 0 var(--dk-sh); cursor:pointer; }
 #plist .scroll{ flex:1; overflow:auto; padding:0 5px 5px; scrollbar-color:var(--dk) transparent; scrollbar-width:thin; }
-#plist section{ border:1px solid var(--dk); background:rgba(255,255,255,.10); margin-bottom:4px; }
+#plist section{ border:1px solid var(--dk); background:var(--panel); margin-bottom:4px; }
 #plist h3{ margin:0; padding:0 6px; background:var(--hd); border-bottom:1px solid var(--dk); font:700 11px "Hiragino Sans","Yu Gothic UI",system-ui,sans-serif; }
-#plist h4{ margin:0; padding:1px 6px 0; font:700 10px "Hiragino Sans","Yu Gothic UI",system-ui,sans-serif; background:rgba(0,0,0,.06); }
+#plist h4{ margin:0; padding:1px 6px 0; font:700 10px "Hiragino Sans","Yu Gothic UI",system-ui,sans-serif; background:var(--sub-bg); }
 #plist .r{ display:grid; grid-template-columns:30px 1fr auto; gap:0 6px; padding:0 6px; align-items:baseline; }
-#plist .r:nth-child(even){ background:rgba(0,0,0,.035); }
+#plist .r:nth-child(even){ background:var(--row-alt); }
 #plist .no{ opacity:.55; text-align:right; }
 #plist .nm{ white-space:nowrap; overflow:hidden; background:linear-gradient(to right,transparent 0,transparent 0); }
 #plist .v{ text-align:right; min-width:92px; }
 #plist .v .vi{ width:38px; padding:0 4px; margin:0; border:0; border-radius:0; font:inherit; text-align:right; background:var(--lcd); color:var(--lcdf); box-shadow:none; }
-#plist .v .vi:focus{ outline:2px solid var(--on); outline-offset:-1px; background:#000; }
+#plist .v .vi:focus{ outline:2px solid var(--on); outline-offset:-1px; background:var(--lcd-edge); }
 #plist .v em{ font-style:normal; opacity:.8; margin-right:4px; }
 #plist .v em[hidden]{ display:none; }
-#plist .r.ch .v .vi{ background:var(--led); color:#ffd9d0; box-shadow:0 0 0 1px var(--on) inset; }
+#plist .r.ch .v .vi{ background:var(--led); color:var(--ch-fg); box-shadow:0 0 0 1px var(--on) inset; }
 #plist .r.un .nm, #plist .r.un .no{ opacity:.45; }
 #plist .r.un .nm::after{ content:" – not used"; font-size:9px; }
 #plist .r.off{ display:none; }
@@ -40,14 +40,21 @@
 #histdlg{ width:min(560px, 92vw); max-height:80vh; padding:0; border:1px solid var(--dk); background:var(--bg); color:var(--ink); font:12px/1.5 "Hiragino Sans","Yu Gothic UI",system-ui,sans-serif; }
 #histdlg::backdrop{ background:rgba(0,0,0,.45); }
 #histdlg .hh{ display:flex; justify-content:space-between; align-items:center; padding:4px 8px; background:var(--hd); border-bottom:1px solid var(--dk); font-size:13px; }
-#histdlg .hh button{ background:var(--dk); color:#fff; font:700 10px inherit; padding:2px 8px; margin-left:4px; border-radius:3px; cursor:pointer; box-shadow:inset 0 -2px 0 #222; }
+#histdlg .hh button{ background:var(--dk); color:var(--on-dk); font:700 10px inherit; padding:2px 8px; margin-left:4px; border-radius:3px; cursor:pointer; box-shadow:inset 0 -2px 0 var(--dk-sh); }
 #histdlg .hb{ padding:6px 14px 12px; overflow:auto; max-height:calc(80vh - 34px); }
-#histdlg h2, #histdlg h3{ margin:8px 0 4px; font-size:14px; background:#960000; color:#fff; padding:1px 8px; display:inline-block; }
+#histdlg h2, #histdlg h3{ margin:8px 0 4px; font-size:14px; background:var(--tag); color:var(--on-dk); padding:1px 8px; display:inline-block; }
 #histdlg ul{ margin:4px 0 8px; padding-left:18px; list-style:disc; } #histdlg li{ margin:2px 0; }
-#histdlg code{ font:11px ui-monospace,Menlo,Consolas,monospace; background:rgba(0,0,0,.08); padding:0 3px; }
+#histdlg code{ font:11px ui-monospace,Menlo,Consolas,monospace; background:var(--sub-bg); padding:0 3px; }
 
 /* Page layout: the whole UI (panel + parameter list) sits in the middle of the browser window with a 10px margin on every side.
    margin:auto centres it both ways; when the window is smaller than the UI it starts at the 10px margin and scrolls. */
 html{ min-height:100%; }
 body{ box-sizing:border-box; min-height:100vh; min-width:max-content; padding:10px; display:flex; }
 #stage{ margin:auto; }
+
+/* Footer: credits to the original Synth1 (under the oscilloscope, same width as the panel) */
+#credits{ margin-top:6px; padding:5px 10px; border:1px solid var(--dk); background:var(--bg); color:var(--ink); font:11px/1.5 "Hiragino Sans","Yu Gothic UI",system-ui,sans-serif; }
+#credits p{ margin:0; }
+#credits p.small{ font-size:10px; opacity:.75; }
+#credits a{ color:inherit; font-weight:700; text-decoration:underline; text-underline-offset:2px; }
+#credits a:hover{ color:var(--on); }

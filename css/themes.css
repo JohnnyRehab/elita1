@@ -1,0 +1,27 @@
+/* Colour themes. js/theme.js sets <html data-theme="...">; the user's own colour edits are applied on top as inline variables.
+   "classic" is the original look and needs no overrides (the defaults live in :root of style.css).
+   The wave icons are black SVGs, so the dark themes turn them light with a filter. */
+.lamp img{ filter:var(--ico-filter); }
+html{ background:var(--page); }
+
+:root[data-theme="dark"]{
+  --bg:#2b2d2f; --hd:#1f2022; --ink:#e6e6e0; --dk:#6a6e72; --lcd:#06130f; --lcdf:#5dffc4; --led:#4a1a14; --on:#ff5a3c; --grn:#3fe05a;
+  --on-dk:#fff; --dk-sh:#3d4043; --tag:#b02a1a; --tag2:#12403a; --btn:#8a2a1e; --btn-fg:#fff; --btn-in:#1a0807; --hi:#f4e36a; --hi-fg:#222; --led-g:#1d4a22;
+  --page:#141517; --key-fg:#1d1d1d; --key-w:#d8d8d0; --key-b:#101112; --key-b-fg:#fff; --knob:#141517; --knob-acc:#ff6a4d; --lcd-edge:#000;
+  --panel:rgba(255,255,255,.05); --row-alt:rgba(255,255,255,.04); --sub-bg:rgba(255,255,255,.08); --ch-fg:#ffd9d0;
+  --ico-filter:invert(.88); --lcd-ico:invert(1) brightness(1.6);
+}
+:root[data-theme="midnight"]{
+  --bg:#1c2740; --hd:#16203a; --ink:#dfe8ff; --dk:#4f6396; --lcd:#071426; --lcdf:#7fd4ff; --led:#3a2030; --on:#ffb347; --grn:#4be08a;
+  --on-dk:#fff; --dk-sh:#2e3c63; --tag:#2f5fc4; --tag2:#123a5c; --btn:#2f4f9a; --btn-fg:#fff; --btn-in:#0b1530; --hi:#ffd36a; --hi-fg:#1a1a1a; --led-g:#14402c;
+  --page:#0d1424; --key-fg:#14203a; --key-w:#e8eefc; --key-b:#0e1626; --key-b-fg:#fff; --knob:#0c1322; --knob-acc:#ffb347; --lcd-edge:#000;
+  --panel:rgba(255,255,255,.05); --row-alt:rgba(255,255,255,.04); --sub-bg:rgba(255,255,255,.08); --ch-fg:#fff1d6;
+  --ico-filter:invert(.9); --lcd-ico:invert(1) brightness(1.6);
+}
+:root[data-theme="light"]{
+  --bg:#ececec; --hd:#d6d6d6; --ink:#202124; --dk:#5b5f66; --lcd:#d7e3cf; --lcdf:#1c3a22; --led:#b8aaa6; --on:#e8412a; --grn:#2fb344;
+  --on-dk:#fff; --dk-sh:#3a3d42; --tag:#c0392b; --tag2:#3d6b5e; --btn:#a8322a; --btn-fg:#fff; --btn-in:#5a1b16; --hi:#f4e36a; --hi-fg:#222; --led-g:#9fb8a4;
+  --page:#f7f7f7; --key-fg:#222; --key-w:#ffffff; --key-b:#222222; --key-b-fg:#fff; --knob:#3a3d42; --knob-acc:#e8412a; --lcd-edge:#444;
+  --panel:rgba(255,255,255,.35); --row-alt:rgba(0,0,0,.04); --sub-bg:rgba(0,0,0,.06); --ch-fg:#3a0f0a;
+  --ico-filter:none; --lcd-ico:none;
+}

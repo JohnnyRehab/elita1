@@ -124,7 +124,7 @@
 
   // ---- button (inside the Patch Parameters tool row) ----
   const css = document.createElement('style');
-  css.textContent = '#plist .tools button.rec{ background:#7a1010; } #plist .tools button.rec.on{ background:#c01010; box-shadow:0 0 0 1px #ff3b1f inset; }';
+  css.textContent = '#plist .tools button.rec{ background:var(--btn); color:var(--btn-fg); } #plist .tools button.rec.on{ background:var(--btn); box-shadow:0 0 0 2px var(--on) inset; }';
   document.head.appendChild(css);
   const tools = document.querySelector('#plist .tools'); let btn = null;
   if (tools) {

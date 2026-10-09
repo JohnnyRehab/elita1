@@ -32,8 +32,8 @@
 /* bottom strip */
 #elita1 #bottom{ grid-column:1/-1; display:flex; gap:4px; padding:0; border:0; background:none; }
 #elita1 #voice{ flex:0 0 492px; }
-#elita1 #patchbox{ flex:1; display:flex; align-items:center; gap:10px; padding:4px 8px; border:1px solid var(--dk); background:rgba(255,255,255,.10); font:inherit; color:inherit; }
-#lcdbox{ flex:1; align-self:stretch; display:flex; flex-direction:column; justify-content:center; background:var(--lcd); border:1px solid #000; padding:2px 8px; color:var(--lcdf); font:15px/1.3 monospace; }
+#elita1 #patchbox{ flex:1; display:flex; align-items:center; gap:10px; padding:4px 8px; border:1px solid var(--dk); background:var(--panel); font:inherit; color:inherit; }
+#lcdbox{ flex:1; align-self:stretch; display:flex; flex-direction:column; justify-content:center; background:var(--lcd); border:1px solid var(--lcd-edge); padding:2px 8px; color:var(--lcdf); font:15px/1.3 monospace; }
 #pinfo{ font-size:11px; opacity:.8; }
 #voice .row{ justify-content:space-between; }
 
@@ -48,15 +48,15 @@
 #lfo, #arpeggiator{ flex:0 0 138px !important; }
 
 /* keyboard strip */
-#keybar{ grid-column:1/-1; display:flex; gap:4px; border:1px solid var(--dk); background:rgba(255,255,255,.10); padding:4px; --bw:20px; }
+#keybar{ grid-column:1/-1; display:flex; gap:4px; border:1px solid var(--dk); background:var(--panel); padding:4px; --bw:20px; }
 #kbinfo{ flex:0 0 150px; display:flex; flex-wrap:wrap; align-content:center; align-items:center; justify-content:center; gap:4px 6px; font-size:10px; text-align:center; }
 #kbinfo b{ font-size:11px; min-width:72px; text-align:center; background:var(--lcd); color:var(--lcdf); padding:2px 4px; font-family:monospace; }
 #kbinfo .sb{ padding:1px 8px; }
 #vc{ flex:0 0 100%; font-size:9px; opacity:.8; }
 #kb{ position:relative; flex:1; display:flex; height:56px; user-select:none; touch-action:none; }
-#kb .key{ display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:0; padding-bottom:2px; font-size:9px; line-height:1.1; color:var(--ink); }
-#kb .key.w{ flex:1; background:#f6f6f0; border:1px solid var(--dk); border-radius:0 0 3px 3px; }
-#kb .key.b{ position:absolute; top:0; width:var(--bw); height:60%; background:#1d1d1d; border-radius:0 0 2px 2px; z-index:1; color:#fff; font-size:8px; }
+#kb .key{ display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:0; padding-bottom:2px; font-size:9px; line-height:1.1; color:var(--key-fg); }
+#kb .key.w{ flex:1; background:var(--key-w); border:1px solid var(--dk); border-radius:0 0 3px 3px; }
+#kb .key.b{ position:absolute; top:0; width:var(--bw); height:60%; background:var(--key-b); border-radius:0 0 2px 2px; z-index:1; color:var(--key-b-fg); font-size:8px; }
 #kb .key small{ font-size:8px; opacity:.55; }
 #kb .key.on{ background:var(--on); }
 #kb .key.on small{ opacity:1; }
@@ -72,5 +72,5 @@
 
 /* oscilloscope (outside the panel, under the keyboard) */
 #scopebox{ position:relative; width:960px; margin-top:6px; }
-#scope{ display:block; width:960px; height:120px; background:var(--lcd); border:1px solid #000; box-sizing:border-box; }
+#scope{ display:block; width:960px; height:120px; background:var(--lcd); border:1px solid var(--lcd-edge); box-sizing:border-box; }
 #scopelbl{ position:absolute; left:8px; top:4px; font:10px monospace; color:var(--lcdf); opacity:.6; }
