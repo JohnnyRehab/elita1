@@ -57,6 +57,43 @@ class Voice {
     [this.o1, this.o2, this.nz].forEach(s => s.start());
     this.on = false; this.note = null; this.t = 0; this.freq = 440; this.midi = 60; this.velF = 1;
   }
+  // Unison pitch (#85): a second layer of OSC1/OSC2 transposed by (value - 24) semitones, created only when needed
+  layer(on) {
+    if (on && !this.u1) {
+      this.u1 = new Tone.OmniOscillator({type: 'sawtooth'}); this.u2 = new Tone.OmniOscillator({type: 'sawtooth'});
+      this.gu1 = new Tone.Gain(0); this.gu2 = new Tone.Gain(0);
+      this.u1.connect(this.gu1); this.u2.connect(this.gu2); this.gu1.connect(this.f); this.gu2.connect(this.f);
+      this.uOn = false;
+    }
+    if (!this.u1 || on === this.uOn) return;
+    this.uOn = on;
+    if (on) { this.u1.start(); this.u2.start(); } else { this.u1.stop(); this.u2.stop(); this.gu1.gain.value = this.gu2.gain.value = 0; }
+  }
+  // Unison pan width (#84): a second, independent copy of OSC1/OSC2 (r1/r2) goes to the opposite side of the main copy.
+  // The signal is merged into 2 channels in front of the filter; the filter / saturation / amp are Web Audio nodes, so they process L and R separately.
+  panStereo(on) {
+    if (on && !this.r1) {
+      this.r1 = new Tone.OmniOscillator({type: 'sawtooth'}); this.r2 = new Tone.OmniOscillator({type: 'sawtooth'});
+      this.gr1 = new Tone.Gain(0); this.gr2 = new Tone.Gain(0);
+      this.mainBus = new Tone.Gain(1); this.rBus = new Tone.Gain(1);
+      this.mL = new Tone.Gain(); this.mR = new Tone.Gain(); this.rL = new Tone.Gain(); this.rR = new Tone.Gain();
+      this.pm = new Tone.Merge();
+      this.r1.connect(this.gr1); this.r2.connect(this.gr2); this.gr1.connect(this.rBus); this.gr2.connect(this.rBus);
+      this.mainBus.connect(this.mL); this.mainBus.connect(this.mR); this.rBus.connect(this.rL); this.rBus.connect(this.rR);
+      this.mL.connect(this.pm, 0, 0); this.rL.connect(this.pm, 0, 0); this.mR.connect(this.pm, 0, 1); this.rR.connect(this.pm, 0, 1);
+      this.pm.connect(this.f);
+      this.rOn = false;
+    }
+    if (!this.r1 || on === this.rOn) return;
+    this.rOn = on;
+    if (on) {
+      this.g1.disconnect(this.f); this.g2.disconnect(this.f); this.g1.connect(this.mainBus); this.g2.connect(this.mainBus);
+      this.r1.start(); this.r2.start();
+    } else {
+      this.g1.disconnect(this.mainBus); this.g2.disconnect(this.mainBus); this.g1.connect(this.f); this.g2.connect(this.f);
+      this.r1.stop(); this.r2.stop(); this.gr1.gain.value = this.gr2.gain.value = 0;
+    }
+  }
   setType(o, t) { if (o.type !== t) o.type = t; }
   trackCut(p) { this.fe.baseFrequency = Math.min(20000, cutoff(p[19]) * Math.pow(2, (this.midi - 60) / 12 * p[22] / 127)); }
   route(g, list, key) {           // reconnect only when the target set changed
@@ -73,19 +110,31 @@ class Voice {
       this.setType(o, ty);
       if (ty.startsWith('fat')) { if (o.count !== uni) o.count = uni; o.spread = spread; }
     };
+    const lay = uni > 1 && p[85] !== 24;
+    this.layer(lay);
     shape(this.o1, OSC1[p[0]] || 'sawtooth');
     const t2 = OSC2[p[1]] || 'sawtooth', noise = t2 === 'noise';
     shape(this.o2, noise ? 'sawtooth' : t2);
+    if (lay) { shape(this.u1, OSC1[p[0]] || 'sawtooth'); shape(this.u2, noise ? 'sawtooth' : t2); }
+    const pan = uni > 1 && p[84] > 0 && (this.o1.type.startsWith('fat') || this.o2.type.startsWith('fat'));
+    this.panStereo(pan);
+    if (pan) { shape(this.r1, OSC1[p[0]] || 'sawtooth'); shape(this.r2, noise ? 'sawtooth' : t2); }
     const w = -0.9 + 0.9 * p[8] / 127;               // pulse width (right = square)
-    [this.o1, this.o2].forEach(o => { if (o.type === 'pulse') o.width.value = w; });
+    [this.o1, this.o2, ...(lay ? [this.u1, this.u2] : []), ...(pan ? [this.r1, this.r2] : [])].forEach(o => { if (o.type === 'pulse') o.width.value = w; });
     const m = p[5] / 127 * Math.PI / 2;
-    const un = 1 / Math.sqrt(uni);                    // keep level steady with more unison voices
+    const un = 1 / Math.sqrt(uni) * (lay ? Math.SQRT1_2 : 1) * (pan ? Math.SQRT1_2 : 1);                    // keep level steady with more unison voices
     this.g1.gain.value = Math.cos(m) * 0.5 * un;
     const ring = p[7] && !noise, sync = p[6] && this.sy && !ring && !noise, s2 = Math.sin(m) * 0.5 * un;
     this.g2.gain.value = noise || ring || sync ? 0 : s2;
     this.gr.gain.value = ring ? s2 * un : 0;
     this.sg2.gain.value = sync ? s2 : 0;
     if (this.sy) this.sy.port.postMessage({t: p[1] % 4, w: (-0.9 + 0.9 * p[8] / 127 + 1) / 2});
+    if (pan) {                                  // width 0 = both copies centred, 127 = main copy hard left / second copy hard right
+      const th = Math.PI / 4 * (1 - p[84] / 127), a = Math.cos(th), b = Math.sin(th);
+      this.mL.gain.value = a; this.mR.gain.value = b; this.rL.gain.value = b; this.rR.gain.value = a;
+      this.gr1.gain.value = this.g1.gain.value; this.gr2.gain.value = this.g2.gain.value;
+    }
+    if (lay) { this.gu1.gain.value = this.g1.gain.value; this.gu2.gain.value = this.g2.gain.value; }
     this.gn.gain.value = noise ? Math.sin(m) * 0.5 : 0;
     // Sub oscillator (wave values follow OSC1; assumed, unverified). Pulse is a fixed square.
     this.setType(this.so, SUBW[p[96]] || 'sine');          // sub wave numbering differs from OSC1 (1 = triangle confirmed on Synth1 with the Piano patch)
@@ -106,7 +155,7 @@ class Voice {
     const pw = o => o.type === 'pulse' ? [o.width] : [];   // pulse-width signal is recreated when the type changes
     [[57, 41, 44], [58, 46, 49]].forEach(([on, ds, dp], k) => {
       const dest = p[on] ? p[ds] : -1, d = p[dp] / 127;
-      const tg = {1: [this.o2.detune], 2: [this.o1.detune, this.o2.detune, this.so.detune], 3: [this.f.detune], 4: [this.vg.gain],
+      const tg = {1: [this.o2.detune, ...(lay ? [this.u2.detune] : []), ...(pan ? [this.r2.detune] : [])], 2: [this.o1.detune, this.o2.detune, this.so.detune, ...(lay ? [this.u1.detune, this.u2.detune] : []), ...(pan ? [this.r1.detune, this.r2.detune] : [])], 3: [this.f.detune], 4: [this.vg.gain],
                   5: [...pw(this.o1), ...pw(this.o2)], 6: [this.fm.gain]}[dest] || [];
       if (tg.length !== this.dst[k].length || tg.some((t, i) => t !== this.dst[k][i])) {
         this.sd[k].disconnect(); tg.forEach(t => this.sd[k].connect(t)); this.dst[k] = tg;
@@ -136,6 +185,8 @@ class Voice {
     set(this.o1.frequency, f1);
     set(this.so.frequency, this.freq * (p[97] ? 0.5 : 1));
     set(this.o2.frequency, f2);
+    if (this.rOn) { set(this.r1.frequency, f1); set(this.r2.frequency, f2); }
+    if (this.uOn) { const k = Math.pow(2, (p[85] - 24) / 12); set(this.u1.frequency, f1 * k); set(this.u2.frequency, f2 * k); }
     if (this.sy) [['f1', f1], ['f2', f2]].forEach(([n, f]) => {
       const a = this.sy.parameters.get(n), t = Tone.now();
       a.cancelScheduledValues(t); a.setValueAtTime(a.value, t);
@@ -148,6 +199,14 @@ class Voice {
     this.setPitch(P, glide); this.trackCut(P);
     if (!retrig) return;
     const now = Tone.now(), s = P[30] / 127;
+    // phase (#91 osc, #92 unison): oscillators free-run by default; with a nonzero phase they restart at that angle on every note-on.
+    // #91 -> OSC1/OSC2/Sub (0..127 = 0..360 deg); #92 is added on top only while unison is on (a fat oscillator cannot offset its voices separately, so this is provisional)
+    const ph = P[91] + (P[73] && P[93] > 1 ? P[92] : 0);
+    if (ph || this.phased) {
+      const deg = ph / 127 * 360, t0 = now + 0.003;
+      [this.o1, this.o2, this.so, ...(this.uOn ? [this.u1, this.u2] : []), ...(this.rOn ? [this.r1, this.r2] : [])].forEach(o => { o.stop(now); o.phase = deg; o.start(t0); });
+      this.phased = ph > 0;
+    }
     // velocity (#30 amp sens, #24 filter switch). Relative to the reference velocity REFV (0.8 = PC keys), so a PC-key note sounds the same as before velocity existed.
     this.amp.triggerAttack(now, REFV * (1 - s * (1 - vel)) / (1 - s * (1 - REFV)));          // sens 0 = fixed level, 127 = level follows velocity
     this.velF = Math.max(0, Math.min(1.25, vel / REFV));                                   // #24 on: filter envelope amount follows velocity
@@ -161,7 +220,7 @@ class Voice {
   }
 }
 
-let shSig = null, lfoOut = null, shTimer = [null, null], lim = null, clip = null, voices = null, master = null, panner = null, eq = null, toneLo = null, toneHi = null, wave = null, lfos = null, chorus = null, chorus2 = null, delay = null;
+let shSig = null, lfoOut = null, shTimer = [null, null], lim = null, clip = null, voices = null, master = null, panner = null, eq = null, toneLo = null, toneHi = null, wave = null, lfos = null, chorus = null, chorus2 = null, delay = null, fx = null;
 const LFO_BEATS = [64, 32, 16, 8, 4, 3, 2, 1.5, 1.3333, 1, 0.75, 0.6667, 0.5, 0.375, 0.3333, 0.25, 0.125];   // tempo-sync divisions (beats per LFO cycle), slow -> fast; provisional
 let SYNC_OK = false, prevMode = null;
 const SYNC_SRC = `class S extends AudioWorkletProcessor {
@@ -180,6 +239,34 @@ const SYNC_SRC = `class S extends AudioWorkletProcessor {
 }
 registerProcessor('sync-osc', S);`;
 
+// Effect section (#77-81), distortion types only: 0 a.d.1 / 1 a.d.2 / 2 d.d. (type numbering follows the panel order; the other types are not implemented yet and pass through).
+// ctl1 = drive, ctl2 = low-pass cutoff, level = dry/wet balance. Curves are provisional.
+const FX_K = 8;                                           // the shaper sees x*FX_K (its input range is -1..1), the pre gain is drive/FX_K
+const FX_CURVES = [
+  x => Math.tanh(x + 0.35) - Math.tanh(0.35),             // a.d.1: asymmetric soft clip (even harmonics); the DC offset is removed by the high-pass
+  x => Math.tanh(x),                                      // a.d.2: symmetric soft clip
+  x => Math.round(Math.max(-1, Math.min(1, x * 1.3)) * 96) / 96,   // d.d.: hard clip with a fine (about 7 bit) step
+];
+function makeFx() {
+  const G = v => new Tone.Gain(v);
+  const f = {input: G(1), dry: G(1), pre: G(1 / FX_K), wet: G(0), post: G(1), out: G(1), curve: -1,
+    shaper: new Tone.WaveShaper(x => x, 4096), hp: new Tone.Filter(20, 'highpass'), lp: new Tone.Filter(20000, 'lowpass')};
+  f.input.connect(f.dry); f.dry.connect(f.out);
+  f.input.chain(f.pre, f.shaper, f.hp, f.lp, f.post, f.wet, f.out);
+  return f;
+}
+function applyFxSection(p) {
+  const ty = p[78] | 0, ok = p[77] && ty >= 0 && ty < FX_CURVES.length;
+  if (ok && fx.curve !== ty) { fx.shaper.setMap(x => FX_CURVES[ty](x * FX_K)); fx.curve = ty; }
+  const drive = Math.pow(40, p[79] / 127), lvl = ok ? p[81] / 127 : 0;
+  fx.pre.gain.value = drive / FX_K;
+  fx.post.gain.value = 1 / Math.pow(drive, 0.55);          // keep the loudness roughly constant as the drive rises
+  fx.lp.frequency.value = 500 * Math.pow(40, p[80] / 127); // 500 Hz .. 20 kHz
+  fx.hp.frequency.value = ty === 0 ? 120 : 20;             // a.d.1 loses its low end (negative feedback)
+  fx.dry.gain.value = Math.cos(lvl * Math.PI / 2); fx.wet.gain.value = Math.sin(lvl * Math.PI / 2);
+  fx.on = !!ok; fx.type = ty;
+}
+
 async function initAudio() {
   try {
     await Tone.getContext().addAudioWorkletModule(URL.createObjectURL(new Blob([SYNC_SRC], {type: 'text/javascript'})));
@@ -196,9 +283,16 @@ async function initAudio() {
   delay = makeDelay();
   lim = new Tone.Limiter(-2); clip = new Tone.WaveShaper(x => Math.tanh(x * 1.2) / 1.2, 2048);
   toneLo = new Tone.Filter({type: 'lowshelf', frequency: 300, gain: 0}); toneHi = new Tone.Filter({type: 'highshelf', frequency: 3000, gain: 0});
-  master.chain(eq, toneLo, toneHi, chorus, chorus2, delay.input);
+  fx = makeFx();
+  // Tone's mono-by-default nodes would fold the stereo unison (#84) down to mono: let them pass 2 channels
+  [eq, toneLo, toneHi, panner, lim, clip, fx.shaper, fx.hp, fx.lp].forEach(n => [n.input, n.output, n._panner, n._shaper, ...(n._filters || [])].forEach(x => {
+    if (x && typeof x.channelCount === 'number') { try { x.channelCount = 2; x.channelCountMode = 'max'; } catch (e) { /* fixed by the node */ } }
+  }));
+  master.chain(fx.input);
+  fx.out.chain(eq, toneLo, toneHi, chorus, chorus2, delay.input);
   delay.output.chain(panner, lim, clip, Tone.getDestination());
   clip.connect(wave);
+  window.__n = {fx, master, eq, toneLo, toneHi, chorus, chorus2, dli: delay.input, dlo: delay.output, panner, lim, clip};
   voices = Array.from({length: POLY}, () => new Voice(master, lfoOut));
   applyAll();
 }
@@ -242,6 +336,7 @@ function applyFx(p) {
   eq.gain.value = (p[62] - 64) / 64 * 12; eq.Q.value = 0.3 + p[63] / 127 * 6;
   const tn = (p[60] - 64) / 64 * 9;                                 // #60 tone: 64 = flat, up = brighter (highs +, lows -), down = darker; max about ±9 dB each side (provisional)
   toneLo.gain.value = -tn; toneHi.gain.value = tn;
+  applyFxSection(p);
   panner.pan.value = Math.max(-1, Math.min(1, (p[90] - 64) / 63));
   [[42, 43], [47, 48]].forEach(([t, sp], k) => {
     const sync = p[[67, 69][k]];                                // tempo sync: the speed knob picks a beat division instead of a rate
@@ -451,7 +546,7 @@ function chainRows() {
     {stage: 'Delay', state: on(P[65]), detail: `type ${['ST', 'X', 'PP'][delay.type] || delay.type}, wet ${r3(delay.wetAmt)}, time ${r3(delay.time)}s (R ×${r3(delay.dr.delayTime.value / delay.dl.delayTime.value)}), feedback ${r3(delay.fb)}, tone LP ${Math.round(delay.lpL.frequency.value)}Hz`},
     {stage: 'Pan', state: Math.abs(panner.pan.value) > 0.01 ? 'ON' : 'center', detail: `pan ${r3(panner.pan.value)}`},
     {stage: 'Limiter → SoftClip(tanh)', state: 'ON', detail: 'safety'},
-    {stage: 'Effect section (#77-81)', state: P[77] ? 'ON (ignored)' : 'off', detail: 'not implemented'},
+    {stage: 'Effect section (#77-81)', state: fx.on ? 'ON' : P[77] ? 'ON (type not implemented, passes through)' : 'off', detail: `type ${['a.d.1', 'a.d.2', 'd.d.'][fx.type] || fx.type}, drive x${r3(Math.pow(40, P[79] / 127))}, LP ${Math.round(fx.lp.frequency.value)}Hz, level ${r3(P[81] / 127)} (placed before the EQ)`},
     {stage: 'Arpeggiator (#59, 31-34)', state: P[59] ? 'ON (ignored)' : 'off', detail: 'not implemented'}
   ];
 }
