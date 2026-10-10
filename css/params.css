@@ -58,3 +58,41 @@ body{ box-sizing:border-box; min-height:100vh; min-width:max-content; padding:10
 #credits p.small{ font-size:10px; opacity:.75; }
 #credits a{ color:inherit; font-weight:700; text-decoration:underline; text-underline-offset:2px; }
 #credits a:hover{ color:var(--on); }
+
+/* pop-up list of an LCD button (effect type / delay type / chorus type) */
+.lcd.pop{ cursor:pointer; }
+.lcdmenu{ position:fixed; z-index:50; display:grid; grid-auto-flow:column; background:var(--lcd); border:1px solid var(--lcd-edge); box-shadow:0 3px 10px rgba(0,0,0,.45); font:12px/18px monospace; }
+.lcdmenu .lcdopt{ display:block; min-width:46px; padding:1px 10px; text-align:left; background:transparent; color:var(--lcdf); cursor:pointer; white-space:nowrap; }
+.lcdmenu .lcdopt:hover, .lcdmenu .lcdopt:focus-visible{ background:var(--lcdf); color:var(--lcd); outline:none; }
+.lcdmenu .lcdopt.sel{ box-shadow:inset 3px 0 0 var(--on); font-weight:700; }
+.lcdmenu .lcdopt img{ height:14px; vertical-align:middle; filter:var(--lcd-ico); }
+
+/* patch display: click to choose a patch from the folder */
+#lcdbox.pl-click{ cursor:pointer; }
+.lcdmenu.pl{ display:block; max-height:min(60vh, 420px); overflow:auto; scrollbar-color:var(--lcdf) transparent; scrollbar-width:thin; }
+.lcdmenu.pl .lcdopt{ display:flex; gap:10px; width:100%; }
+.lcdmenu.pl .lcdopt i{ font-style:normal; opacity:.6; min-width:2.2em; text-align:right; }
+.lcdmenu.pl .lcdopt.more{ border-top:1px solid var(--lcdf); opacity:.85; }
+
+/* MIDI input (js/midi.js) */
+.midibtn .mdot{ display:inline-block; width:7px; height:7px; border-radius:50%; margin-left:4px; background:#777; vertical-align:middle; }
+.midibtn.on .mdot{ background:#3fe05a; }
+.midibtn.act .mdot{ background:#fff; box-shadow:0 0 5px #fff; }
+.midipanel{ display:block; width:360px; max-height:calc(100vh - 8px); overflow:auto; padding:8px 10px; color:var(--lcdf); font:12px/1.5 monospace; }
+.midipanel .dim{ opacity:.7; }
+.midipanel .mhead{ display:flex; justify-content:space-between; border-bottom:1px solid var(--lcdf); margin-bottom:4px; }
+.midipanel .merr{ color:var(--on); }
+.midipanel .mrow{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.midipanel .mrow .tgt{ margin-left:auto; }
+.midipanel .mrow .val{ min-width:3.5em; text-align:center; }
+.midipanel .lcdopt{ width:100%; }
+.midipanel .lcdopt.tgl{ width:auto; }
+.midipanel .sb2{ background:transparent; color:var(--lcdf); border:0; cursor:pointer; font:inherit; padding:0 6px; }
+.midipanel .sb2:hover{ background:var(--lcdf); color:var(--lcd); }
+.midipanel .msep{ border-top:1px solid var(--lcdf); margin-top:4px; padding-top:4px; }
+.midipanel .mfoot{ display:flex; gap:6px; margin-top:6px; }
+.midipanel .mfoot .btn{ padding:2px 8px; font-size:11px; border:0; font-family:inherit; }
+.midipanel .mfoot .r{ margin-left:auto; }
+#midistat{ position:fixed; left:8px; bottom:8px; z-index:40; display:none; font:11px monospace; background:rgba(0,0,0,.8); color:#7dff9b; padding:3px 8px; border-radius:3px; pointer-events:none; }
+.learning{ outline:2px dashed var(--on); outline-offset:2px; animation:mlearn .7s steps(2) infinite; }
+@keyframes mlearn{ 50%{ outline-color:transparent; } }

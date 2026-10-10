@@ -6,7 +6,7 @@
 (function () {
   const P = {}, DEF = {}, ctl = {}, NAME = {};
   let silent = false, sect = '';
-  const E = window.ELITA = {params: P, names: NAME, defaults: DEF, onChange: null, set, loadSy1, dials: []};
+  const E = window.ELITA = {params: P, names: NAME, defaults: DEF, onChange: null, set, loadSy1, dials: [], choose: (no, v) => choose(no, v)};
   const cssv = (n, fb) => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || fb;
   E.recolor = () => E.dials.forEach(d => { d.colorize('accent', cssv('--knob-acc', '#ff4a36')); d.colorize('fill', cssv('--knob', '#2b2b2b')); });   // called by js/theme.js
   const $ = id => document.getElementById(id);
@@ -25,7 +25,7 @@
 
   /* ---- widgets ---- */
   function knob(p, no, label, def = 0, size = 30) {
-    const w = cell(p, label);
+    const w = cell(p, label); w.dataset.no = no;      // data-no: lets js/midi.js find the knob for CC learn
     const d = new Nexus.Dial(w, {size: [size, size], interaction: 'vertical', mode: 'relative', min: 0, max: 127, step: 1, value: def});
     d.colorize('accent', cssv('--knob-acc', '#ff4a36')); d.colorize('fill', cssv('--knob', '#2b2b2b')); E.dials.push(d);
     const put = v => { v = Math.max(0, Math.min(127, Math.round(v))); silent = true; d.value = v; silent = false; emit(no, v); };
@@ -42,11 +42,32 @@
     reg(no, def, show, label);
   }
   // LCD-style button that cycles through items
-  function lcd(p, no, label, items, def = 0) {
+  // pop-up list for the LCD buttons that have many choices (effect type, delay type, chorus type): click the LCD, pick one directly
+  let menuEl = null;
+  function closeMenu() { if (menuEl) { menuEl.remove(); menuEl = null; } }
+  document.addEventListener('pointerdown', e => { if (menuEl && !menuEl.contains(e.target) && !e.target.closest('.lcd.pop')) closeMenu(); }, true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+  window.addEventListener('blur', closeMenu);
+  function openMenu(anchor, no, items, cols, skip) {
+    closeMenu();
+    const m = menuEl = h('div', 'lcdmenu', document.body); m.setAttribute('role', 'listbox');
+    const shown = items.map((it, v) => [it, v]).filter(x => !skip.includes(x[1])), rows = Math.ceil(shown.length / cols);
+    m.style.gridTemplateRows = `repeat(${rows}, auto)`;
+    shown.forEach(([it, v]) => {
+      const o = h('button', 'lcdopt' + (v === P[no] ? ' sel' : ''), m, it.img ? `<img src="img/${it.img}.svg" alt="">` : it.t);
+      o.type = 'button'; o.setAttribute('role', 'option'); o.setAttribute('aria-selected', v === P[no]);
+      o.onclick = () => { choose(no, v); closeMenu(); };
+    });
+    const r = anchor.getBoundingClientRect(), mw = m.offsetWidth, mh = m.offsetHeight;
+    m.style.left = Math.max(4, Math.min(r.left, window.innerWidth - mw - 4)) + 'px';
+    m.style.top = Math.max(4, Math.min(r.top, window.innerHeight - mh - 4)) + 'px';
+  }
+  function lcd(p, no, label, items, def = 0, pop) {
     items = items.map(i => typeof i === 'string' ? {t: i} : i);
     const b = btn(p, 'lcd'), show = v => { const it = items[v]; b.innerHTML = it ? (it.img ? `<img src="img/${it.img}.svg" alt="">` : it.t) : '?' + v; };
     const go = d => choose(no, (P[no] + d + items.length) % items.length);
-    b.onclick = () => go(1);
+    if (pop) { b.classList.add('pop'); b.title = 'click: choose from the list (right-click / wheel: step)'; b.onclick = () => openMenu(b, no, items, pop.cols || 1, pop.skip || []); }
+    else b.onclick = () => go(1);
     b.oncontextmenu = e => { e.preventDefault(); go(-1); };
     b.onwheel = e => { e.preventDefault(); go(e.deltaY < 0 ? 1 : -1); };
     reg(no, def, show, label);
@@ -131,16 +152,16 @@
 
   /* ---- Effect / Equalizer-Pan / Tempo Delay / Chorus ---- */
   o = sec('effect', 'fx'); r = row(o);
-  sw(r, 77, 'on', 0, 'r', 'ON'); lcd(r, 78, 'type', ['a.d.1', 'a.d.2', 'd.d.', 'deci.', 'r.m.', 'comp.', 'ph.1', 'ph.2', 'ph.3', 'ph.4']);
+  sw(r, 77, 'on', 0, 'r', 'ON'); lcd(r, 78, 'type', ['a.d.1', 'a.d.2', 'd.d.', 'deci.', 'r.m.', 'comp.', 'ph.1', 'ph.2', 'ph.3', 'ph.4'], 0, {cols: 2});
   knob(r, 79, 'ctl1', 0, 28); knob(r, 80, 'ctl2', 0, 28); knob(r, 81, 'level', 0, 28);
   o = sec('equalizer-pan', 'eq'); r = row(o);
   knob(r, 61, 'freq', 64); knob(r, 62, 'level', 64); knob(r, 63, 'Q', 64); knob(r, 60, 'tone', 64); knob(r, 90, 'L-R', 64);
   o = sec('tempo-delay', 'delay'); r = row(o, 'split');
-  c = col(r, 'sw'); sw(c, 65, 'on', 0, 'r', 'ON'); lcd(c, 82, 'type', ['ST', 'X', 'PP']);
+  c = col(r, 'sw'); sw(c, 65, 'on', 0, 'r', 'ON'); lcd(c, 82, 'type', ['ST', 'X', 'PP'], 0, {cols: 1});
   r = row(r, 'kn');
   knob(r, 35, 'time', 8, 28); knob(r, 83, 'sprd', 0, 28); knob(r, 36, 'fdbk', 40, 28); knob(r, 98, 'tone', 0, 28); knob(r, 37, 'd/w', 20, 28);
   o = sec('chrous-flanger', 'chorus'); r = row(o, 'split');
-  c = col(r, 'sw'); sw(c, 66, 'on', 0, 'r', 'ON'); lcd(c, 64, 'type', ['x0?', 'x1', 'x2', 'x3', 'x4'], 2);
+  c = col(r, 'sw'); sw(c, 66, 'on', 0, 'r', 'ON'); lcd(c, 64, 'type', ['x0?', 'x1', 'x2', 'x3', 'x4'], 2, {cols: 1, skip: [0]});
   r = row(r, 'kn');
   knob(r, 52, 'time', 64, 28); knob(r, 53, 'deph', 64, 28); knob(r, 54, 'rate', 50, 28); knob(r, 55, 'fdbk', 64, 28); knob(r, 56, 'levl', 64, 28);
 
