@@ -13,7 +13,6 @@ const SUBW = ['sine', 'triangle', 'sawtooth', 'square'];   // #96: 0 sine / 1 tr
 const OSC1 = ['sine','sawtooth','pulse','triangle'];
 const OSC2 = ['sine','sawtooth','pulse','triangle','noise'];
 const FTYPE = [['lowpass',-12],['lowpass',-24],['highpass',-12],['bandpass',-12],['lowpass',-24]];
-const FTYPE_DUMMY=0;
 // Provisional curves (to be tuned by ear)
 const time = v => 0.001 * Math.pow(8000, v / 127);   // 1 ms .. 8 s
 const CUT_OCT = Math.log2(400);                        // octaves covered by the frequency knob
@@ -416,7 +415,8 @@ function applyFx(p) {
       }
     } else {
       if (shTimer[k]) { clearInterval(shTimer[k].id); shTimer[k] = null; shSig[k].value = 0; }
-      lfos[k].type = LFO_WAVE[ty] || 'sine';
+      const wt = LFO_WAVE[ty] || 'sine';
+      if (lfos[k].type !== wt) lfos[k].type = wt;                    // assigning the type rebuilds the waveform (about 4 ms): only when it really changed
       if (lfos[k].state !== 'started') lfos[k].start();
     }
   });
@@ -429,7 +429,7 @@ function applyFx(p) {
   // Chorus type: indicator "xN" = value N (Oldage Leader x2, Pain Leader x4). Approximation:
   // x1 = mono LFO, x2 = L/R opposite phase, x3/x4 = extra detuned 2nd stage in series.
   const n = Math.max(1, Math.min(4, p[64]));
-  chorus.spread = n === 1 ? 0 : 180;
+  const spr = n === 1 ? 0 : 180; if (chorus.spread !== spr) chorus.spread = spr;   // the setter resets the LFO phase (expensive): only when it changed
   chorus2.delayTime = (2 + p[52] / 127 * 8) * 1.3;
   chorus2.depth = p[53] / 127 * 0.8;
   chorus2.frequency.value = chorus.frequency.value * 1.37;

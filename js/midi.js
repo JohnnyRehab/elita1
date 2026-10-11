@@ -41,7 +41,7 @@
     ticks.push(ts); if (ticks.length > 49) ticks.shift();
     if (++tickCount % 24 || ticks.length < 25 || !cfg.clock) return;
     const bpm = 60000 / ((ticks[ticks.length - 1] - ticks[0]) / (ticks.length - 1) * 24);
-    if (bpm >= 30 && bpm <= 330) { bpmShown = bpm; const r = Math.round(bpm); if (r !== E.bpm() && E.setBpm) E.setBpm(r); }
+    if (bpm >= 30 && bpm <= 330) { bpmShown = bpm; if (input) stat.textContent = statusText(); const r = Math.round(bpm); if (r !== E.bpm() && E.setBpm) E.setBpm(r); }
   }
 
   /* ---------- message handler ---------- */
@@ -49,8 +49,8 @@
   function handle(d, ts) {
     const s = d[0];
     if (s >= 0xF8) {                                                // realtime (any channel)
-      if (s === 0xF8) { clockOn = true; clockTick(ts); }
-      else if (s === 0xFA || s === 0xFB) { ticks.length = 0; tickCount = 0; last = s === 0xFA ? 'start' : 'continue'; }
+      if (s === 0xF8) { clockOn = true; clockTick(ts); return; }       // clock is 48+ messages a second: no DOM work per tick
+      if (s === 0xFA || s === 0xFB) { ticks.length = 0; tickCount = 0; last = s === 0xFA ? 'start' : 'continue'; }
       else if (s === 0xFC) { last = 'stop'; ticks.length = 0; tickCount = 0; }
       return pulse();
     }
