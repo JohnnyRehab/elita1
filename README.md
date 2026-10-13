@@ -161,7 +161,13 @@ elita1/
     ├── Tone.js         Tone.js 14.8.49（同梱）
     ├── NexusUI.js      NexusUI（同梱）
     ├── ui.js           画面。つまみを Synth1 のパラメータ番号で登録
-    ├── engine.js       音源エンジン（Tone.js）とデバッグモード
+    ├── calib.js        校正値（カーブ・波形テーブル・ポリ数 / unison 数）と共有状態 ELITA.core
+    ├── worklets.js     AudioWorklet のソース（ハードシンク、デシメーター）
+    ├── voice.js        1 ボイス（OSC・unison・フィルター・エンベロープ・LFO 送り）
+    ├── fx.js           エフェクト（エフェクト部・ディレイ・コーラス・EQ）
+    ├── notes.js        ノート処理（poly / mono / legato）とアルペジエーター
+    ├── debug.js        デバッグモード（コンソール用）
+    ├── engine.js       音の起動、全体の更新（applyAll）、画面との接続、公開 API（最後に読み込む）
     ├── keys.js         鍵盤（画面 / PC キー）
     ├── patches.js      フォルダ指定とパッチ切り替え
     ├── scope.js        オシロスコープ
@@ -184,7 +190,7 @@ ELITA.set(no, value)  // コールバックなしで値を設定
 ELITA.loadSy1(text)   // .sy1 のテキストを読み込む
 ```
 
-`engine.js` は `ELITA.onChange` を受けて Tone.js の各ノードを更新します。画面と音源が分かれているので、音源だけ差し替えることもできます。
+`engine.js`（と calib / voice / fx / notes）は `ELITA.onChange` を受けて Tone.js の各ノードを更新します。画面と音源が分かれているので、音源だけ差し替えることもできます。
 
 信号経路:
 
@@ -268,11 +274,11 @@ Synth1 のファクトリープリセット相当 128 音色（すべて `ver=10
 
 ### その他
 
-- ボイス数は 5 固定です（`engine.js` の `POLY`）。Synth1 の最大ポリ数とは異なります。
+- ボイス数は 5 固定です（`calib.js` の `POLY`）。Synth1 の最大ポリ数とは異なります。
 - MIDI 入力は Web MIDI（Chrome / Edge）のみ対応です。MIDI 出力、プログラムチェンジ、MIDI の `#50` / `#51` / `#86–89`（sens 系）は未対応です。
 - 画面は 960px 固定で、スマートフォンの縦画面には最適化していません。タッチでの演奏は画面の鍵盤で可能です。
 - ブラウザは Chrome / Edge / Firefox / Safari の最新版を想定しています。ハードシンク（OSC2 の sync）は AudioWorklet を使うため、AudioWorklet が使えない環境では無効になります。
-- unison の本数は、CPU 負荷と音色の再現性のため最大 3 に制限しています（`engine.js` の `UNI_MAX`）。パッチの `#93` が 4 以上のときは 3 に丸め、パラメーター一覧に `clamped → 3` と出ます。パルス波は unison の対象外です（OSC が pulse の間は、unison が ON でも1本のままです。例: ebm bass）。
+- unison の本数は、CPU 負荷と音色の再現性のため最大 3 に制限しています（`calib.js` の `UNI_MAX`）。パッチの `#93` が 4 以上のときは 3 に丸め、パラメーター一覧に `clamped → 3` と出ます。パルス波は unison の対象外です（OSC が pulse の間は、unison が ON でも1本のままです。例: ebm bass）。
 - 長時間の連続再生や、多数のボイス + unison + Chorus 2 段での CPU 負荷は未検証です。
 
 ## 今後の候補
