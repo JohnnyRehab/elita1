@@ -16,7 +16,17 @@ const FTYPE = [['lowpass',-12],['lowpass',-24],['highpass',-12],['bandpass',-12]
 // Provisional curves (to be tuned by ear)
 const time = v => 0.001 * Math.pow(8000, v / 127);   // 1 ms .. 8 s
 const CUT_OCT = Math.log2(400);                        // octaves covered by the frequency knob
-const cutoff = v => 50 * Math.pow(2, CUT_OCT * v / 127);    // 50 Hz .. 20 kHz (provisional)
+// frq -> cutoff: log-interpolated table. 64..112 measured from Synth1 recordings (2 cascaded biquad fit), 0..48 extrapolated from attenuation at 110 Hz (provisional)
+const Q_OFF = -5;
+const CUT_TAB = [[0, 20], [16, 40], [32, 90], [48, 200], [64, 610], [80, 1360], [96, 3450], [112, 10000], [127, 20000]];
+const cutoff = v => {
+  v = Math.max(0, Math.min(127, v));
+  for (let i = 1; i < CUT_TAB.length; i++) if (v <= CUT_TAB[i][0]) {
+    const a = CUT_TAB[i - 1], b = CUT_TAB[i], t = (v - a[0]) / (b[0] - a[0]);
+    return a[1] * Math.pow(b[1] / a[1], t);
+  }
+  return 20000;
+};
 
 class Voice {
   constructor(out, lfos) {
@@ -24,7 +34,7 @@ class Voice {
     this.o2 = new Tone.OmniOscillator({type:'sawtooth'});
     this.nz = new Tone.Noise('white');
     this.g1 = new Tone.Gain(); this.g2 = new Tone.Gain(); this.gn = new Tone.Gain(0);
-    this.f = new Tone.Filter({type:'lowpass', rolloff:-24});
+    this.f = new Tone.Filter({type:'lowpass', rolloff:-24}); this._qn = 0;
     this.fe = new Tone.FrequencyEnvelope({baseFrequency:200, octaves:4});
     this.amp = new Tone.AmplitudeEnvelope();
     this.o1.connect(this.g1); this.o2.connect(this.g2); this.nz.connect(this.gn);
@@ -94,6 +104,7 @@ class Voice {
     }
   }
   setType(o, t) { if (o.type !== t) o.type = t; }
+  setQOff() { this._qn = this.f._filters.length; this.f._filters.forEach(x => { x.Q.value = Q_OFF; }); }   // native biquad Q (dB) offset; Tone's own Q signal cannot go negative
   trackCut(p) { this.fe.baseFrequency = Math.min(20000, cutoff(p[19]) * Math.pow(2, (this.midi - 60) / 12 * p[22] / 127)); }
   route(g, list, key) {           // reconnect only when the target set changed
     const cur = this[key];
@@ -140,7 +151,8 @@ class Voice {
     this.sg.gain.value = p[95] / 127 * 0.5 * Math.cos(m);       // scales with the OSC1 side of the mix
     const [ft, ro] = FTYPE[p[14]] || FTYPE[1];
     this.f.type = ft; if (this.f.rolloff !== ro) this.f.rolloff = ro;
-    this.f.Q.value = 0.5 + Math.pow(p[20] / 127, 2) * 9;
+    this.f.Q.value = Math.pow(p[20] / 127, 2) * 14.5;   // dB per stage, added to the -5 dB offset set in setQOff (softer knee at res 0 like Synth1)
+    if (this.f._filters.length !== this._qn) this.setQOff();
     { const sat = p[23] / 127, wet = Math.min(1, sat * 3);                       // 0 = bypass (exactly clean)
       this.satDry.gain.value = 1 - wet; this.satWet.gain.value = wet * 0.5; this.satPre.gain.value = (1 + sat * 14) / 8; }
     this.trackCut(p);
