@@ -53,7 +53,7 @@ function pathString(v) {
   const f = v.f;
   return [parts.join(' + ') || '(silent: all oscillator levels 0)',
     P[45] > 0 ? `[FM: OSC2→OSC1 pitch, depth ${r3(v.fm.gain.value)} cents]` : '',
-    `→ FILTER(${f.type} ${f.rolloff}dB, base ${Math.round(v.fe.baseFrequency)}Hz, Q ${r3(f.Q.value)}, env ${r3(v.fe.octaves)} oct)`,
+    v.useLad ? `→ FILTER(LADDER 24dB experimental, fc ${Math.round(v.fe.baseFrequency * v.ladScale.gain.value)}Hz, k ${r3(v.ladR.value)}, env ${r3(v.fe.octaves)} oct)` : `→ FILTER(${f.type} ${f.rolloff}dB, base ${Math.round(v.fe.baseFrequency)}Hz, Q ${r3(f.Q.value)}, env ${r3(v.fe.octaves)} oct)`,
     v.satWet.gain.value > 0 ? `→ SAT(tanh, drive ×${r3(v.satPre.gain.value * 8)}, wet ${r3(v.satWet.gain.value * 2)})` : '',
     `→ AMP(env A${r3(v.amp.attack)} D${r3(v.amp.decay)} S${r3(v.amp.sustain)} R${r3(v.amp.release)})`,
     lf.length ? `[${lf.join(', ')}]` : '', me ? `[mod env→${me}]` : '',

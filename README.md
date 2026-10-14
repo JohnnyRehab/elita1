@@ -194,6 +194,8 @@ ELITA.loadSy1(text)   // .sy1 のテキストを読み込む
 
 `engine.js`（と calib / voice / fx / notes）は `ELITA.onChange` を受けて Tone.js の各ノードを更新します。画面と音源が分かれているので、音源だけ差し替えることもできます。
 
+実験機能（ラダーフィルター）: URL の末尾に `?filter=ladder` を付けて開くと、フィルターが 4 ポールのラダー型（24 dB/oct）になります。コンソールでは `ELITA.engine.filterMode('ladder')` / `('biquad')` で切り替えられます（既定は `biquad`）。ローパス 24 dB のタイプだけが対象です。
+
 信号経路:
 
 ```

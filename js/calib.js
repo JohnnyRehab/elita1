@@ -27,6 +27,21 @@ const cutoff = v => {
   }
   return 20000;
 };
+// Experimental ladder filter (S.FILTER = 'ladder'; switch with ELITA.engine.filterMode('ladder' | 'biquad') or ?filter=ladder in the URL).
+// A 4-pole ladder fitted to the same Synth1 recordings as the biquad pair (A2 / A3 / A4 harmonics, frq 64..112) leaves the same residual (about 0.5 dB rms) with ONE free parameter (fc)
+// instead of two (fc + resonance offset), so it is a simpler description of Synth1's knee.  fc (Hz) per frq: 64 -> 586, 80 -> 1454, 96 -> 3784, 112 -> 11955 (measured); 0..48 are the biquad table x 0.96 (extrapolated).
+// LAD_K: feedback at res 127 (4 = self-oscillation); res has not been measured on Synth1, so this is provisional.
+const LAD_K = 3.6;
+const CUT_TAB_LAD = [[0, 19], [16, 38], [32, 86], [48, 192], [64, 586], [80, 1454], [96, 3784], [112, 11955], [127, 30000]];
+const cutoffLad = v => {
+  v = Math.max(0, Math.min(127, v));
+  for (let i = 1; i < CUT_TAB_LAD.length; i++) if (v <= CUT_TAB_LAD[i][0]) {
+    const a = CUT_TAB_LAD[i - 1], b = CUT_TAB_LAD[i], t = (v - a[0]) / (b[0] - a[0]);
+    return a[1] * Math.pow(b[1] / a[1], t);
+  }
+  return 30000;
+};
+Object.assign(S, {LAD_K, CUT_TAB_LAD, cutoffLad, FILTER: 'biquad'});
 Object.assign(S, {POLY, UNI_MAX, REFV, LFO_WAVE, SUBW, OSC1, OSC2, FTYPE, time, CUT_OCT, Q_OFF, CUT_TAB, cutoff});
 // shared mutable state (written by engine.js / voice.js / js/midi.js; read everywhere as S.xxx)
 Object.assign(S, {BPM: 120, BEND: 0, SYNC_OK: false, voices: null, master: null, panner: null, eq: null, toneLo: null, toneHi: null, lim: null, clip: null, wave: null,

@@ -1,7 +1,7 @@
 /* ELITA-1 voice: oscillators (+unison / sub / ring / sync / FM / noise) -> filter -> amp, plus the envelopes and LFO sends of one note. */
 (function () {
 const E = window.ELITA, P = E.params, S = (E.core = E.core || {});
-const {UNI_MAX, REFV, SUBW, OSC1, OSC2, FTYPE, time, CUT_OCT, Q_OFF, cutoff} = S;
+const {UNI_MAX, REFV, SUBW, OSC1, OSC2, FTYPE, time, CUT_OCT, Q_OFF, cutoff, cutoffLad, LAD_K} = S;
 class Voice {
   constructor(out, lfoSrc) {
     this.o1 = new Tone.OmniOscillator({type:'sawtooth'});
@@ -9,28 +9,37 @@ class Voice {
     this.nz = new Tone.Noise('white');
     this.g1 = new Tone.Gain(); this.g2 = new Tone.Gain(); this.gn = new Tone.Gain(0);
     this.f = new Tone.Filter({type:'lowpass', rolloff:-24}); this._qn = 0;
+    // Filter stage: every source feeds fin; fin goes to the biquad filter f (default) or to the experimental ladder lad (S.FILTER = 'ladder', low-pass 24 dB only); both end in fout.
+    this.fin = new Tone.Gain(1); this.fout = new Tone.Gain(1); this.lad = null; this.useLad = false;
+    this.fin.connect(this.f); this.f.connect(this.fout);
     this.fe = new Tone.FrequencyEnvelope({baseFrequency:200, octaves:4});
     this.amp = new Tone.AmplitudeEnvelope();
     this.o1.connect(this.g1); this.o2.connect(this.g2); this.nz.connect(this.gn);
-    [this.g1, this.g2, this.gn].forEach(g => g.connect(this.f));
+    [this.g1, this.g2, this.gn].forEach(g => g.connect(this.fin));
     this.fe.connect(this.f.frequency);
     this.vg = new Tone.Gain(1);                      // tremolo stage (LFO -> amp)
     // Filter saturation (#23): parallel tanh shaper after the filter, crossfaded with the clean signal
     this.satDry = new Tone.Gain(1); this.satPre = new Tone.Gain(1 / 8); this.satWet = new Tone.Gain(0);
     this.satShaper = new Tone.WaveShaper(x => Math.tanh(8 * x), 2048);          // input is pre-scaled by drive/8, so the output is tanh(drive * x)
-    this.f.connect(this.satDry); this.satDry.connect(this.amp);
-    this.f.connect(this.satPre); this.satPre.connect(this.satShaper); this.satShaper.connect(this.satWet); this.satWet.connect(this.amp);
+    this.fout.connect(this.satDry); this.satDry.connect(this.amp);
+    this.fout.connect(this.satPre); this.satPre.connect(this.satShaper); this.satShaper.connect(this.satWet); this.satWet.connect(this.amp);
     this.amp.connect(this.vg); this.vg.connect(out);
     this.sd = lfoSrc.map(l => { const g = new Tone.Gain(0); l.connect(g); return g; });   // LFO depth sends
     this.dst = [[], []];
     // Sub oscillator: follows OSC1 pitch (0 / -1 oct), no unison
     this.so = new Tone.OmniOscillator({type: 'sine'}); this.sg = new Tone.Gain(0);
-    this.so.connect(this.sg); this.sg.connect(this.f); this.so.start();
+    this.so.connect(this.sg); this.sg.connect(this.fin); this.so.start();
     // Ring mod: osc1 x osc2 replaces the osc2 signal
     this.mul = new Tone.Multiply(0); this.gr = new Tone.Gain(0);
-    this.o1.connect(this.mul); this.o2.connect(this.mul.factor); this.mul.connect(this.gr); this.gr.connect(this.f);
+    this.o1.connect(this.mul); this.o2.connect(this.mul.factor); this.mul.connect(this.gr); this.gr.connect(this.fin);
     // Hard sync: worklet slave oscillator restarted by osc1 (stays null if the worklet failed to load)
-    this.sy = null; this.sg2 = new Tone.Gain(0); this.sg2.connect(this.f);
+    if (S.SYNC_OK) {                                  // ladder worklet (same module as the sync oscillator)
+      const L = this.lad = Tone.getContext().createAudioWorkletNode('ladder', {numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2], channelCount: 2, channelCountMode: 'explicit'});
+      this.ladF = L.parameters.get('freq'); this.ladD = L.parameters.get('detune'); this.ladR = L.parameters.get('res'); this.ladF.value = 0; this.ladD.value = 0;
+      this.ladScale = new Tone.Gain(1); this.fe.connect(this.ladScale); Tone.connect(this.ladScale, this.ladF);   // envelope output (Hz) -> ladder frequency
+      Tone.connect(this.lad, this.fout);
+    }
+    this.sy = null; this.sg2 = new Tone.Gain(0); this.sg2.connect(this.fin);
     if (S.SYNC_OK) { this.sy = Tone.getContext().createAudioWorkletNode('sync-osc', {numberOfInputs: 0, outputChannelCount: [1]}); Tone.connect(this.sy, this.sg2); }
     // FM: osc2 acts as the modulator of osc1 pitch (cents)
     this.fm = new Tone.Gain(0); this.o2.connect(this.fm); this.fm.connect(this.o1.detune);
@@ -45,7 +54,7 @@ class Voice {
     if (on && !this.u1) {
       this.u1 = new Tone.OmniOscillator({type: 'sawtooth'}); this.u2 = new Tone.OmniOscillator({type: 'sawtooth'});
       this.gu1 = new Tone.Gain(0); this.gu2 = new Tone.Gain(0);
-      this.u1.connect(this.gu1); this.u2.connect(this.gu2); this.gu1.connect(this.f); this.gu2.connect(this.f);
+      this.u1.connect(this.gu1); this.u2.connect(this.gu2); this.gu1.connect(this.fin); this.gu2.connect(this.fin);
       this.uOn = false;
     }
     if (!this.u1 || on === this.uOn) return;
@@ -64,20 +73,27 @@ class Voice {
       this.r1.connect(this.gr1); this.r2.connect(this.gr2); this.gr1.connect(this.rBus); this.gr2.connect(this.rBus);
       this.mainBus.connect(this.mL); this.mainBus.connect(this.mR); this.rBus.connect(this.rL); this.rBus.connect(this.rR);
       this.mL.connect(this.pm, 0, 0); this.rL.connect(this.pm, 0, 0); this.mR.connect(this.pm, 0, 1); this.rR.connect(this.pm, 0, 1);
-      this.pm.connect(this.f);
+      this.pm.connect(this.fin);
       this.rOn = false;
     }
     if (!this.r1 || on === this.rOn) return;
     this.rOn = on;
     if (on) {
-      this.g1.disconnect(this.f); this.g2.disconnect(this.f); this.g1.connect(this.mainBus); this.g2.connect(this.mainBus);
+      this.g1.disconnect(this.fin); this.g2.disconnect(this.fin); this.g1.connect(this.mainBus); this.g2.connect(this.mainBus);
       this.r1.start(); this.r2.start();
     } else {
-      this.g1.disconnect(this.mainBus); this.g2.disconnect(this.mainBus); this.g1.connect(this.f); this.g2.connect(this.f);
+      this.g1.disconnect(this.mainBus); this.g2.disconnect(this.mainBus); this.g1.connect(this.fin); this.g2.connect(this.fin);
       this.r1.stop(); this.r2.stop(); this.gr1.gain.value = this.gr2.gain.value = 0;
     }
   }
   setType(o, t) { if (o.type !== t) o.type = t; }
+  // switch the signal path between the biquad filter and the ladder (only reconnects when the choice changed)
+  setLadder(on) {
+    if (on === this.useLad) return;
+    this.useLad = on;
+    this.fin.disconnect();
+    if (on) Tone.connect(this.fin, this.lad); else this.fin.connect(this.f);
+  }
   setQOff() { this._qn = this.f._filters.length; this.f._filters.forEach(x => { x.Q.value = Q_OFF; }); }   // native biquad Q (dB) offset; Tone's own Q signal cannot go negative
   trackCut(p) { this.fe.baseFrequency = Math.min(20000, cutoff(p[19]) * Math.pow(2, (this.midi - 60) / 12 * p[22] / 127)); }
   route(g, list, key) {           // reconnect only when the target set changed
@@ -135,6 +151,8 @@ class Voice {
   // filter (type, resonance, saturation, cutoff, filter env) and the filter / amp envelopes
   applyFilter(p) {
     const [ft, ro] = FTYPE[p[14]] || FTYPE[1];
+    this.setLadder(S.FILTER === 'ladder' && !!this.lad && ft === 'lowpass' && ro === -24);
+    if (this.useLad) { this.ladR.value = Math.min(4, LAD_K * Math.pow(p[20] / 127, 2)); this.ladScale.gain.value = cutoffLad(p[19]) / cutoff(p[19]); }   // the envelope output follows the biquad table; this ratio turns it into the ladder's fc
     this.f.type = ft; if (this.f.rolloff !== ro) this.f.rolloff = ro;
     this.f.Q.value = Math.pow(p[20] / 127, 2) * 14.5;   // dB per stage, added to the -5 dB offset set in setQOff (softer knee at res 0 like Synth1)
     if (this.f._filters.length !== this._qn) this.setQOff();
@@ -154,7 +172,7 @@ class Voice {
     const pw = o => o.type === 'pulse' ? [o.width] : [];   // pulse-width signal is recreated when the type changes
     [[57, 41, 44], [58, 46, 49]].forEach(([on, ds, dp], k) => {
       const dest = p[on] ? p[ds] : -1, d = p[dp] / 127;
-      const tg = {1: [this.o2.detune, ...(lay ? [this.u2.detune] : []), ...(pan ? [this.r2.detune] : [])], 2: [this.o1.detune, this.o2.detune, this.so.detune, ...(lay ? [this.u1.detune, this.u2.detune] : []), ...(pan ? [this.r1.detune, this.r2.detune] : [])], 3: [this.f.detune], 4: [this.vg.gain],
+      const tg = {1: [this.o2.detune, ...(lay ? [this.u2.detune] : []), ...(pan ? [this.r2.detune] : [])], 2: [this.o1.detune, this.o2.detune, this.so.detune, ...(lay ? [this.u1.detune, this.u2.detune] : []), ...(pan ? [this.r1.detune, this.r2.detune] : [])], 3: [this.f.detune, ...(this.ladD ? [this.ladD] : [])], 4: [this.vg.gain],
                   5: [...pw(this.o1), ...pw(this.o2)], 6: [this.fm.gain]}[dest] || [];
       if (tg.length !== this.dst[k].length || tg.some((t, i) => t !== this.dst[k][i])) {
         this.sd[k].disconnect(); tg.forEach(t => this.sd[k].connect(t)); this.dst[k] = tg;

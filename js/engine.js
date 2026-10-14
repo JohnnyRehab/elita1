@@ -64,6 +64,7 @@ window.ELITA.onChange = () => refresh();
   }
   window.ELITA.setBpm = v => { v = set(v); if (b) b.value = v; }; }
 window.ELITA.bpm = () => S.BPM;
-window.ELITA.engine = {bend: s => { S.BEND = +s || 0; if (S.voices) S.voices.forEach(v => v.freq && v.setPitch(P)); }, rawOn: voiceOn, rawOff: voiceOff, lfoHz: () => S.lfos.map(l => l.frequency.value), start, noteOn, noteOff, allOff, voices: () => S.voices, wave: () => S.wave, POLY, used: S.usedSet, unisonMax: UNI_MAX};
+{ const q = new URLSearchParams(location.search).get('filter'); if (q === 'ladder') S.FILTER = 'ladder'; }   // ?filter=ladder: start with the experimental ladder filter
+window.ELITA.engine = {filterMode: m => { if (m === 'ladder' || m === 'biquad') { S.FILTER = m; refresh(); } return S.FILTER; }, bend: s => { S.BEND = +s || 0; if (S.voices) S.voices.forEach(v => v.freq && v.setPitch(P)); }, rawOn: voiceOn, rawOff: voiceOff, lfoHz: () => S.lfos.map(l => l.frequency.value), start, noteOn, noteOff, allOff, voices: () => S.voices, wave: () => S.wave, POLY, used: S.usedSet, unisonMax: UNI_MAX};
 S.scan.push(applyAll);
 })();
