@@ -2,11 +2,11 @@
    type a number and press Enter (or leave the box) to change the parameter; ↑/↓ = ±1 (Shift ±8); Esc = cancel. */
 (function () {
   const E = window.ELITA, $ = id => document.getElementById(id), box = $('plist');
-  const L = (...a) => a, onoff = ['off', 'on'];
+  const onoff = ['off', 'on'];
   const W1 = {0: 'sine', 1: 'saw', 2: 'pulse', 3: 'tri'}, W2 = {0: 'sine?', 1: 'saw', 2: 'pulse', 3: 'tri', 4: 'noise'};
   const LD = ['none', 'osc2', 'osc1,2', 'filter', 'amp', 'p/w', 'FM', 'pan'], LT = ['saw', 'tri', 'pulse', 's&h', 'sine', 'rnd'];
   const FT = ['LP12', 'LP24', 'HP12', 'BP12', 'LPDL'], FX = ['a.d.1', 'a.d.2', 'd.d.', 'deci.', 'r.m.', 'comp.', 'ph.1', 'ph.2', 'ph.3', 'ph.4'];
-  const T = a => v => a[v], X = a => v => a[v];
+  const T = a => v => a[v];
   // [no, label, decoder?]   section → optional sub-groups
   const SEC = [
     ['Oscillators', [
@@ -40,7 +40,7 @@
     if (isNaN(n)) { inp.value = E.params[o.no]; return; }                       // not a number: put the old value back
     const [lo, hi] = rng(o.no), v = Math.max(lo, Math.min(hi, n));
     inp.value = v;
-    if (v !== E.params[o.no]) { E.set(o.no, v); E.onChange && E.onChange(o.no, v); }   // set = move the knob, onChange = tell the engine
+    if (v !== E.params[o.no]) { E.setValue(o.no, v); inp.value = E.params[o.no]; }   // setValue = move the knob + tell the engine (the value may be clamped to the control's range)
   }
   const sc = $('pscroll'), rows = [];
   SEC.forEach(([title, groups]) => {

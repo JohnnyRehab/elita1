@@ -1,6 +1,6 @@
 /* ELITA-1 effects: effect section (distortion / deci. / r.m. / comp. / phaser), stereo delay, chorus, EQ, tone, LFO speed. */
 (function () {
-const E = window.ELITA, P = E.params, S = (E.core = E.core || {});
+const E = window.ELITA, S = (E.core = E.core || {});
 const {LFO_WAVE} = S;
 const LFO_BEATS = [64, 32, 16, 8, 4, 3, 2, 1.5, 1.3333, 1, 0.75, 0.6667, 0.5, 0.375, 0.3333, 0.25, 0.125];   // tempo-sync divisions (beats per LFO cycle), slow -> fast; provisional
 // Effect section (#77-81): 0 a.d.1 / 1 a.d.2 / 2 d.d. / 3 deci. / 4 r.m. / 5 comp. / 6-9 ph.1-4 (numbering follows the panel order, a guess).

@@ -186,7 +186,9 @@ elita1/
 ```js
 ELITA.params          // 現在値 { 番号: 値 }
 ELITA.onChange        // (番号, 値) => {} つまみが動くたびに呼ばれる
-ELITA.set(no, value)  // コールバックなしで値を設定
+ELITA.set(no, value)  // コールバックなしで値を設定（範囲内に丸められる）
+ELITA.setValue(no, v) // 値を設定してエンジンにも通知（MIDI や入力欄はこれ）。状態の持ち主は ELITA.params だけ
+ELITA.check()         // 表示と値の一致を確認（不一致の一覧、空なら一致）
 ELITA.loadSy1(text)   // .sy1 のテキストを読み込む
 ```
 

@@ -15,7 +15,7 @@
   try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s) cfg = Object.assign(cfg, s, {map: Object.assign({}, s.map || DEFMAP)}); } catch (e) {}
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch (e) {} };
 
-  let access = null, input = null, err = '', learning = null, panel = null, last = '', bpmShown = 0, clockOn = false, flash = 0;
+  let access = null, input = null, err = '', learning = null, panel = null, last = '', bpmShown = 0, clockOn = false;
   const down = new Set(), sus = new Set(); let hold = false;       // physically held notes / notes kept alive by the sustain pedal
   const ticks = []; let tickCount = 0;
 
@@ -27,7 +27,7 @@
   function noteOff(n) { down.delete(n); if (hold) sus.add(n); else EN.noteOff(n); }
   function setHold(on) { if (on === hold) return; hold = on; if (!on) { sus.forEach(n => { if (!down.has(n)) EN.noteOff(n); }); sus.clear(); } }
   function allOff() { down.clear(); sus.clear(); hold = false; EN.allOff(); }
-  function param(no, v) { E.set(no, v); if (E.onChange) E.onChange(no, v); const i = $('pinfo'); if (i) i.textContent = (E.names[no] || '#' + no) + ' = ' + v; }
+  function param(no, v) { E.setValue(no, v); }   // set + engine update + info line, with the value clamped to the control's range
   function cc(c, v) {
     if (learning != null) { learn(c); return; }
     const t = cfg.map[c];
@@ -109,7 +109,7 @@
   btn.type = 'button'; btn.className = 'btn midibtn'; btn.textContent = 'MIDI'; btn.title = 'MIDI input (Web MIDI)'; pb && pb.appendChild(btn);
   const stat = document.createElement('div'); stat.id = 'midistat'; document.body.appendChild(stat);
   const dot = document.createElement('i'); dot.className = 'mdot'; btn.append(' ', dot);
-  function pulse() { flash = performance.now(); btn.classList.add('act'); stat.textContent = statusText(); clearTimeout(pulse.t); pulse.t = setTimeout(() => btn.classList.remove('act'), 90); }
+  function pulse() { btn.classList.add('act'); stat.textContent = statusText(); clearTimeout(pulse.t); pulse.t = setTimeout(() => btn.classList.remove('act'), 90); }
   const statusText = () => input ? 'MIDI IN  ' + (input.name || input.id) + ' | ch ' + (cfg.ch || 'OMNI') + (last ? ' | ' + last : '') + (clockOn && cfg.clock && bpmShown ? ' | ♪ ' + bpmShown.toFixed(1) + ' BPM' : '') + (learning != null ? ' | LEARN: move a CC for ' + nameOf(learning) : '') : '';
   function status() {
     btn.classList.toggle('on', !!input); stat.textContent = statusText(); stat.style.display = input || learning != null ? 'block' : 'none';
@@ -152,7 +152,7 @@
     tg('velocity → amp', 'vel');
     h('div', 'msep dim', panel, 'CC MAP   (right-click a knob → LEARN CC)');
     const ks = Object.keys(cfg.map).map(Number).sort((a, c) => a - c);
-    ks.forEach(k => { const r = h('div', 'mrow', panel); h('span', '', r, 'CC ' + k); const t = h('span', 'tgt', r, '→ ' + nameOf(cfg.map[k])); b(r, '×', () => { delete cfg.map[k]; save(); render(); }, 'sb2'); });
+    ks.forEach(k => { const r = h('div', 'mrow', panel); h('span', '', r, 'CC ' + k); h('span', 'tgt', r, '→ ' + nameOf(cfg.map[k])); b(r, '×', () => { delete cfg.map[k]; save(); render(); }, 'sb2'); });
     if (learning != null) h('div', 'mrow', panel).textContent = 'learning… ' + nameOf(learning);
     const ft = h('div', 'mfoot', panel);
     b(ft, 'reset map', () => { cfg.map = Object.assign({}, DEFMAP); save(); render(); }, 'btn');

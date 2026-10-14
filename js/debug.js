@@ -1,7 +1,7 @@
 /* ELITA-1 debug mode (console helpers). Not needed for playing. */
 (function () {
 const E = window.ELITA, P = E.params, S = (E.core = E.core || {});
-const {POLY, UNI_MAX} = S, {isMono} = S;
+const {POLY, UNI_MAX} = S;
 // ================= debug mode =================
 // Enable:  open the page with ?debug  (or #debug), or run  ELITA.debug.on()  in the console.  Disable: ELITA.debug.off()
 // Console helpers:  ELITA.debug.graph()   signal path of the whole synth (voice + effect chain)
@@ -30,7 +30,6 @@ function dbgParams() {
 function dbgNote(kind, n) {
   if (!DBG) return;
   if (kind === 'off') { const v = S.voices.filter(x => x.note === n); console.log('%c[ELITA]%c note OFF %s (%d) → release voice %s', C, '', NOTE(n), n, v.map(x => S.voices.indexOf(x)).join(',') || '(none)'); return; }
-  const mono = isMono();
   setTimeout(() => {   // after allocation
     const v = S.voices.filter(x => x.note === n);
     const vi = v.map(x => S.voices.indexOf(x)).join(',');
@@ -71,7 +70,7 @@ function chainRows() {
     {stage: 'Pan', state: Math.abs(S.panner.pan.value) > 0.01 ? 'ON' : 'center', detail: `pan ${r3(S.panner.pan.value)}`},
     {stage: 'Limiter → SoftClip(tanh)', state: 'ON', detail: 'safety'},
     {stage: 'Effect section (#77-81)', state: S.fx.on ? 'ON' : P[77] ? 'ON (deci. unavailable: AudioWorklet failed, passes through)' : 'off', detail: `type ${['a.d.1', 'a.d.2', 'd.d.', 'deci.', 'r.m.', 'comp.', 'ph.1', 'ph.2', 'ph.3', 'ph.4'][S.fx.type] || S.fx.type}, ctl1 ${P[79]}, ctl2 ${P[80]}, level ${P[81]} (placed before the EQ)`},
-    {stage: 'Arpeggiator (#59, 31-34)', state: P[59] ? 'ON (ignored)' : 'off', detail: 'not implemented'}
+    {stage: 'Arpeggiator (#59, 31-34)', state: P[59] ? 'ON' : 'off', detail: `type ${['', 'up', 'down', 'up/down', 'random'][P[31]] || P[31]}, range ${(P[32] | 0) + 1} oct, beat #${P[33]}, gate ${P[34]}`}
   ];
 }
 function voiceRows(v, i) {

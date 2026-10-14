@@ -6,7 +6,7 @@
 (function () {
   const P = {}, DEF = {}, ctl = {}, NAME = {};
   let silent = false, sect = '';
-  const E = window.ELITA = {params: P, names: NAME, defaults: DEF, onChange: null, set, loadSy1, dials: [], choose: (no, v) => choose(no, v)};
+  const E = window.ELITA = {params: P, names: NAME, defaults: DEF, onChange: null, set, loadSy1, dials: [], choose: (no, v) => choose(no, v), setValue: (no, v) => choose(no, v)};
   const cssv = (n, fb) => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || fb;
   E.recolor = () => E.dials.forEach(d => { d.colorize('accent', cssv('--knob-acc', '#ff4a36')); d.colorize('fill', cssv('--knob', '#2b2b2b')); });   // called by js/theme.js
   const $ = id => document.getElementById(id);
@@ -18,10 +18,14 @@
   const btn = (p, cls, text) => { const b = h('button', cls, p, text); b.type = 'button'; return b; };
   const T = a => a.map((t, v) => ({v, t}));
 
-  function reg(no, def, fn, label) { ctl[no] = fn; P[no] = DEF[no] = def; NAME[no] = sect + ' ' + label; silent = true; fn(def); silent = false; }
+  // Single source of truth: ELITA.params (P). Every write goes through set() (normalises the value, moves the control silently) and emit() (updates P, tells the engine);
+  // choose() / ELITA.setValue() = set + emit, the one call for MIDI, the text boxes and anything new. Controls never hold a value of their own.
+  const RNG = {};   // allowed range per number (knobs 0..127, switches 0..1, number boxes min..max); lamps and LCD lists keep raw values (an unknown value shows as '?n')
+  function reg(no, def, fn, label, rng) { if (rng) RNG[no] = rng; ctl[no] = fn; P[no] = DEF[no] = def; NAME[no] = sect + ' ' + label; silent = true; fn(def); silent = false; }
   function emit(no, v) { if (silent) return; P[no] = v; $('pinfo').textContent = NAME[no] + ' = ' + v; if (E.onChange) E.onChange(no, v); }
-  function set(no, v) { if (!ctl[no]) return; silent = true; try { ctl[no](v); } finally { silent = false; } P[no] = v; }
-  const choose = (no, v) => { set(no, v); emit(no, v); };
+  function norm(no, v) { v = Math.round(+v); if (!isFinite(v)) return DEF[no]; const r = RNG[no]; return r ? Math.max(r[0], Math.min(r[1], v)) : v; }
+  function set(no, v) { if (!ctl[no]) return; v = norm(no, v); silent = true; try { ctl[no](v); } finally { silent = false; } P[no] = v; }
+  const choose = (no, v) => { if (!ctl[no]) return; set(no, v); emit(no, P[no]); };
 
   /* ---- widgets ---- */
   function knob(p, no, label, def = 0, size = 30) {
@@ -32,14 +36,14 @@
     d.on('change', v => emit(no, Math.round(v)));
     w.addEventListener('dblclick', () => put(DEF[no]));
     w.addEventListener('wheel', e => { e.preventDefault(); put(P[no] + (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? 8 : 1)); }, {passive: false});
-    reg(no, def, v => { d.value = v; }, label);
+    reg(no, def, v => { d.value = v; }, label, [0, 127]);
   }
   // lamp + dark button; led: 'r' red, 'g' green, 'n' = number button that turns yellow
   function sw(p, no, label, def = 0, led = 'r', text) {
     const t = h('span', 'tg ' + led, p); h('i', 'led', t);
     const b = btn(t, 'sb', text || label), show = v => t.classList.toggle('on', !!v);
     b.onclick = () => { const v = P[no] ? 0 : 1; show(v); emit(no, v); };
-    reg(no, def, show, label);
+    reg(no, def, show, label, [0, 1]);
   }
   // LCD-style button that cycles through items
   // pop-up list for the LCD buttons that have many choices (effect type, delay type, chorus type): click the LCD, pick one directly
@@ -79,7 +83,7 @@
     up.onclick = () => put(P[no] + 1); dn.onclick = () => put(P[no] - 1);
     b.onwheel = e => { e.preventDefault(); put(P[no] + (e.deltaY < 0 ? 1 : -1)); };
     if (label) h('span', '', w, label);
-    reg(no, def, x => { v.textContent = x; }, label);
+    reg(no, def, x => { v.textContent = x; }, label, [min, max]);
   }
   function radio(p, no, v, c) {
     const l = h('label', 'lamp', p), i = h('input', '', l);
@@ -173,6 +177,14 @@
 
   /* ---- Bottom: vol ---- */
   sect = 'vol'; knob($('vol'), 'vol', 'vol', 100, 40);
+
+  // ELITA.check(): every knob / switch / number box must show what ELITA.params holds, and every value must be inside its range. Returns the list of mismatches (empty = consistent).
+  E.check = () => {
+    const bad = [];
+    E.dials.forEach(d => { const w = d.element && d.element.parentElement, no = w && w.dataset.no; if (no !== undefined && d.value !== P[no]) bad.push({no, shown: d.value, value: P[no]}); });
+    Object.keys(RNG).forEach(no => { if (P[no] < RNG[no][0] || P[no] > RNG[no][1]) bad.push({no, range: RNG[no], value: P[no]}); });
+    return bad;
+  };
 
   /* ---- patch loading ---- */
   E.extra = {}; E.patch = {name: 'Init patch', color: 'default'};   // extra: numbers in the file that have no control on the panel (e.g. #40, #50, #51, #86-89), kept so export can write them back
