@@ -2,6 +2,7 @@
 (function () {
 const E = window.ELITA, P = E.params, S = (E.core = E.core || {});
 const {UNI_MAX, REFV, SUBW, OSC1, OSC2, FTYPE, time, CUT_OCT, Q_OFF, cutoff, cutoffLad, LAD_K} = S;
+const SL1 = [-0.8, 0.7, -0.45, 0.9, -1], SL2 = [0.6, -0.9, 0.75, -0.5, 0.35], SLC = [0.6, -0.4, 0.9, -0.7, 0.2];   // per-voice offsets (-1..1) for OSC1 / OSC2 pitch and the cutoff
 class Voice {
   constructor(out, lfoSrc) {
     this.o1 = new Tone.OmniOscillator({type:'sawtooth'});
@@ -35,7 +36,7 @@ class Voice {
     // Hard sync: worklet slave oscillator restarted by osc1 (stays null if the worklet failed to load)
     if (S.SYNC_OK) {                                  // ladder worklet (same module as the sync oscillator)
       const L = this.lad = Tone.getContext().createAudioWorkletNode('ladder', {numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2], channelCount: 2, channelCountMode: 'explicit'});
-      this.ladF = L.parameters.get('freq'); this.ladD = L.parameters.get('detune'); this.ladR = L.parameters.get('res'); this.ladF.value = 0; this.ladD.value = 0;
+      this.ladF = L.parameters.get('freq'); this.ladD = L.parameters.get('detune'); this.ladR = L.parameters.get('res'); this.ladS = L.parameters.get('sat'); this.ladF.value = 0; this.ladD.value = 0;
       this.ladScale = new Tone.Gain(1); this.fe.connect(this.ladScale); Tone.connect(this.ladScale, this.ladF);   // envelope output (Hz) -> ladder frequency
       Tone.connect(this.lad, this.fout);
     }
@@ -47,7 +48,7 @@ class Voice {
     this.me = new Tone.Envelope({attack: 0.001, decay: 0.1, sustain: 0, release: 0.01});
     this.mg = new Tone.Gain(0); this.me.connect(this.mg); this.mt = [];
     [this.o1, this.o2, this.nz].forEach(s => s.start());
-    this.on = false; this.note = null; this.t = 0; this.freq = 440; this.midi = 60; this.velF = 1;
+    this.d1 = this.d2 = this.dc = 0; this.on = false; this.note = null; this.t = 0; this.freq = 440; this.midi = 60; this.velF = 1;
   }
   // Unison pitch (#85): a second layer of OSC1/OSC2 transposed by (value - 24) semitones, created only when needed
   layer(on) {
@@ -107,6 +108,19 @@ class Voice {
     this.applyFilter(p);
     this.applyMod(p, r.lay, r.pan);
     this.setPitch(p);
+    this.setAnalog(S.analog);
+  }
+  // Analog character (Settings): a fixed detune per voice number ("slop", repeatable) and a slow random wander ("drift", advanced by tick = true every 100 ms from engine.js).
+  // Both are added to the detune inputs (cents), so LFO / FM / bend keep working. Zero = exactly the unmodified signal.
+  setAnalog(a, tick) {
+    const i = (this.idx || 0) % SL1.length, s = a.slop, dr = a.drift, m = this._an || (this._an = new Map());
+    if (!dr) this.d1 = this.d2 = this.dc = 0;
+    else if (tick) { const g = dr * 0.24, r = () => (Math.random() * 2 - 1) * g; this.d1 = this.d1 * 0.96 + r(); this.d2 = this.d2 * 0.96 + r(); this.dc = this.dc * 0.96 + r(); }   // ~3 s time constant, about 0.5 x drift cents rms
+    const put = (sig, v) => { if (!sig || Math.abs((m.get(sig) || 0) - v) < 0.005) return; m.set(sig, v); sig.value = v; };
+    const c1 = SL1[i] * s + (this.d1 || 0), c2 = SL2[i] * s + (this.d2 || 0), cc = SLC[i] * s * 6 + (this.dc || 0) * 3;
+    [this.o1, this.so, this.u1, this.r1].forEach(o => put(o && o.detune, c1));
+    [this.o2, this.u2, this.r2].forEach(o => put(o && o.detune, c2));
+    put(this.f.detune, cc); put(this.ladD, cc);
   }
   // oscillators: unison, mix, ring / sync / noise, sub.  Returns which extra copies are active (lay = unison pitch layer, pan = unison stereo width).
   applyOsc(p) {
@@ -135,7 +149,7 @@ class Voice {
     this.g2.gain.value = noise || ring || sync ? 0 : s2;
     this.gr.gain.value = ring ? s2 * un : 0;
     this.sg2.gain.value = sync ? s2 : 0;
-    if (this.sy) this.sy.port.postMessage({t: p[1] % 4, w: (-0.9 + 0.9 * p[8] / 127 + 1) / 2});
+    if (this.sy) this.sy.port.postMessage({t: p[1] % 4, w: (-0.9 + 0.9 * p[8] / 127 + 1) / 2, aa: S.SYNC_AA});
     if (pan) {                                  // width 0 = both copies centred, 127 = main copy hard left / second copy hard right
       const th = Math.PI / 4 * (1 - p[84] / 127), a = Math.cos(th), b = Math.sin(th);
       this.mL.gain.value = a; this.mR.gain.value = b; this.rL.gain.value = b; this.rR.gain.value = a;
@@ -152,6 +166,7 @@ class Voice {
   applyFilter(p) {
     const [ft, ro] = FTYPE[p[14]] || FTYPE[1];
     this.setLadder(S.FILTER === 'ladder' && !!this.lad && ft === 'lowpass' && ro === -24);
+    if (this.ladS) this.ladS.value = S.LADDER_SAT === 'stage' ? 1 : 0;
     if (this.useLad) { this.ladR.value = Math.min(4, LAD_K * Math.pow(p[20] / 127, 2)); this.ladScale.gain.value = cutoffLad(p[19]) / cutoff(p[19]); }   // the envelope output follows the biquad table; this ratio turns it into the ladder's fc
     this.f.type = ft; if (this.f.rolloff !== ro) this.f.rolloff = ro;
     this.f.Q.value = Math.pow(p[20] / 127, 2) * 14.5;   // dB per stage, added to the -5 dB offset set in setQOff (softer knee at res 0 like Synth1)

@@ -9,7 +9,7 @@
 #plist .pn span{ font-size:10px; opacity:.75; }
 #plist .tools{ display:flex; gap:4px; padding:0 5px 5px; align-items:center; font:10px "Hiragino Sans","Yu Gothic UI",system-ui,sans-serif; }
 #plist .tools label{ display:flex; gap:3px; align-items:center; cursor:pointer; margin-right:auto; }
-#plist .tools button{ background:var(--dk); color:var(--on-dk); font:700 10px inherit; padding:2px 8px; border-radius:3px; box-shadow:inset 0 -2px 0 var(--dk-sh); cursor:pointer; }
+#plist .tools button{ white-space:nowrap; background:var(--dk); color:var(--on-dk); font:700 10px inherit; padding:2px 8px; border-radius:3px; box-shadow:inset 0 -2px 0 var(--dk-sh); cursor:pointer; }
 #plist .scroll{ flex:1; overflow:auto; padding:0 5px 5px; scrollbar-color:var(--dk) transparent; scrollbar-width:thin; }
 #plist section{ border:1px solid var(--dk); background:var(--panel); margin-bottom:4px; }
 #plist h3{ margin:0; padding:0 6px; background:var(--hd); border-bottom:1px solid var(--dk); font:700 11px "Hiragino Sans","Yu Gothic UI",system-ui,sans-serif; }

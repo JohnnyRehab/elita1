@@ -19,30 +19,27 @@ const CUT_OCT = Math.log2(400);                        // octaves covered by the
 // Q_OFF: per-stage resonance offset in dB at res 0 (Synth1's knee is softer than a plain biquad with Q = 0 dB).
 const Q_OFF = -5;
 const CUT_TAB = [[0, 20], [16, 40], [32, 90], [48, 200], [64, 610], [80, 1360], [96, 3450], [112, 10000], [127, 20000]];
-const cutoff = v => {
+// log-interpolation through a [frq, Hz] table (shared by the biquad and ladder curves)
+const interp = (tab, v) => {
   v = Math.max(0, Math.min(127, v));
-  for (let i = 1; i < CUT_TAB.length; i++) if (v <= CUT_TAB[i][0]) {
-    const a = CUT_TAB[i - 1], b = CUT_TAB[i], t = (v - a[0]) / (b[0] - a[0]);
+  for (let i = 1; i < tab.length; i++) if (v <= tab[i][0]) {
+    const a = tab[i - 1], b = tab[i], t = (v - a[0]) / (b[0] - a[0]);
     return a[1] * Math.pow(b[1] / a[1], t);
   }
-  return 20000;
+  return tab[tab.length - 1][1];
 };
-// Experimental ladder filter (S.FILTER = 'ladder'; switch with ELITA.engine.filterMode('ladder' | 'biquad') or ?filter=ladder in the URL).
+const cutoff = v => interp(CUT_TAB, v);
+// Experimental ladder filter (S.FILTER = 'ladder'; chosen in Settings, or ELITA.engine.filterMode('ladder' | 'biquad') from the console).
 // A 4-pole ladder fitted to the same Synth1 recordings as the biquad pair (A2 / A3 / A4 harmonics, frq 64..112) leaves the same residual (about 0.5 dB rms) with ONE free parameter (fc)
 // instead of two (fc + resonance offset), so it is a simpler description of Synth1's knee.  fc (Hz) per frq: 64 -> 586, 80 -> 1454, 96 -> 3784, 112 -> 11955 (measured); 0..48 are the biquad table x 0.96 (extrapolated).
 // LAD_K: feedback at res 127 (4 = self-oscillation); res has not been measured on Synth1, so this is provisional.
 const LAD_K = 3.6;
 const CUT_TAB_LAD = [[0, 19], [16, 38], [32, 86], [48, 192], [64, 586], [80, 1454], [96, 3784], [112, 11955], [127, 30000]];
-const cutoffLad = v => {
-  v = Math.max(0, Math.min(127, v));
-  for (let i = 1; i < CUT_TAB_LAD.length; i++) if (v <= CUT_TAB_LAD[i][0]) {
-    const a = CUT_TAB_LAD[i - 1], b = CUT_TAB_LAD[i], t = (v - a[0]) / (b[0] - a[0]);
-    return a[1] * Math.pow(b[1] / a[1], t);
-  }
-  return 30000;
-};
-Object.assign(S, {LAD_K, CUT_TAB_LAD, cutoffLad, FILTER: 'biquad'});
-Object.assign(S, {POLY, UNI_MAX, REFV, LFO_WAVE, SUBW, OSC1, OSC2, FTYPE, time, CUT_OCT, Q_OFF, CUT_TAB, cutoff});
+const cutoffLad = v => interp(CUT_TAB_LAD, v);
+// Settings (js/settings.js writes these): FILTER 'biquad' | 'ladder'; LADDER_SAT 'soft' | 'stage'; SYNC_AA = PolyBLEP / PolyBLAMP on the hard-sync oscillator;
+// analog.slop = fixed per-voice detune (cents, max) and analog.drift = slow random pitch / cutoff wander (cents, rms-ish). All off by default = the sound of ver 0.5.53.
+Object.assign(S, {LAD_K, cutoffLad, FILTER: 'biquad', LADDER_SAT: 'soft', SYNC_AA: false, analog: {slop: 0, drift: 0}});
+Object.assign(S, {POLY, UNI_MAX, REFV, LFO_WAVE, SUBW, OSC1, OSC2, FTYPE, time, CUT_OCT, Q_OFF, cutoff});
 // shared mutable state (written by engine.js / voice.js / js/midi.js; read everywhere as S.xxx)
 Object.assign(S, {BPM: 120, BEND: 0, SYNC_OK: false, voices: null, master: null, panner: null, eq: null, toneLo: null, toneHi: null, lim: null, clip: null, wave: null,
   lfos: null, lfoOut: null, shSig: null, shTimer: [null, null], chorus: null, chorus2: null, delay: null, fx: null, scan: []});

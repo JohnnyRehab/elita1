@@ -100,6 +100,6 @@ function noteOff(n) {
   if (i >= 0) { arp.held.splice(i, 1); if (!arp.held.length) arpStop(); return; }
   voiceOff(n);
 }
-Object.assign(S, {arp, arpStop, allOff, voiceOn, voiceOff, noteOn, noteOff, isMono, keySync});
+Object.assign(S, {arp, arpStop, allOff, voiceOn, voiceOff, noteOn, noteOff});
 S.scan.push(keySync, voiceOn, voiceOff, noteOn, noteOff, arpStep, arpList, arpStepSec, glideTime, isMono);
 })();

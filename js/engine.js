@@ -34,7 +34,7 @@ async function initAudio() {
   S.delay.output.chain(S.panner, S.lim, S.clip, Tone.getDestination());
   S.clip.connect(S.wave);
   window.__n = {fx: S.fx, master: S.master, eq: S.eq, toneLo: S.toneLo, toneHi: S.toneHi, chorus: S.chorus, chorus2: S.chorus2, dli: S.delay.input, dlo: S.delay.output, panner: S.panner, lim: S.lim, clip: S.clip};
-  S.voices = Array.from({length: POLY}, () => new S.Voice(S.master, S.lfoOut));
+  S.voices = Array.from({length: POLY}, (_, i) => { const v = new S.Voice(S.master, S.lfoOut); v.idx = i; return v; });
   applyAll();
 }
 function applyAll() {
@@ -64,7 +64,7 @@ window.ELITA.onChange = () => refresh();
   }
   window.ELITA.setBpm = v => { v = set(v); if (b) b.value = v; }; }
 window.ELITA.bpm = () => S.BPM;
-{ const q = new URLSearchParams(location.search).get('filter'); if (q === 'ladder') S.FILTER = 'ladder'; }   // ?filter=ladder: start with the experimental ladder filter
-window.ELITA.engine = {filterMode: m => { if (m === 'ladder' || m === 'biquad') { S.FILTER = m; refresh(); } return S.FILTER; }, bend: s => { S.BEND = +s || 0; if (S.voices) S.voices.forEach(v => v.freq && v.setPitch(P)); }, rawOn: voiceOn, rawOff: voiceOff, lfoHz: () => S.lfos.map(l => l.frequency.value), start, noteOn, noteOff, allOff, voices: () => S.voices, wave: () => S.wave, POLY, used: S.usedSet, unisonMax: UNI_MAX};
+setInterval(() => { if (S.voices && S.analog.drift > 0) S.voices.forEach(v => v.setAnalog(S.analog, true)); }, 100);   // slow drift (Settings), only while it is on
+window.ELITA.engine = {refresh, filterMode: m => { if (m === 'ladder' || m === 'biquad') { if (E.settings) E.settings.set('filter', m); else { S.FILTER = m; refresh(); } } return S.FILTER; }, bend: s => { S.BEND = +s || 0; if (S.voices) S.voices.forEach(v => v.freq && v.setPitch(P)); }, rawOn: voiceOn, rawOff: voiceOff, lfoHz: () => S.lfos.map(l => l.frequency.value), start, noteOn, noteOff, allOff, voices: () => S.voices, wave: () => S.wave, POLY, used: S.usedSet, unisonMax: UNI_MAX};
 S.scan.push(applyAll);
 })();

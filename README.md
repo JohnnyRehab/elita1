@@ -18,7 +18,7 @@ Synth1 のパッチ（`.sy1`）をブラウザで試聴するための、フリ�
 - 画面下の鍵盤と PC キーボードで演奏（オクターブ切替あり）。外部の MIDI 機器やシーケンサーからも演奏可能（MIDI 入力、CC ラーン、クロック同期）
 - 出力波形のオシロスコープ表示
 - 画面上部の「UPDATED」をクリックすると、`history.md` の最新の更新内容が見られます（`show all` で全履歴）。
-- 画面右側に、パッチの全パラメーターを文字で一覧表示（変更した項目を強調、`changed only` で絞り込み、`copy text` でコピー）。**値の欄は入力欄になっていて、数字を打って Enter（または欄の外をクリック）で、そのパラメーターを変更できます**。↑↓ で ±1（Shift で ±8）、Esc で取り消し。範囲外の数字は範囲内に丸め、入力できるのは数字だけです（文字や記号は入りません。マイナス記号は key shift のみ）。つまみや音にもすぐ反映されます
+- 画面右側に、パッチの全パラメーターを文字で一覧表示（変更した項目を強調、`changed only` で絞り込み）。**値の欄は入力欄になっていて、数字を打って Enter（または欄の外をクリック）で、そのパラメーターを変更できます**。↑↓ で ±1（Shift で ±8）、Esc で取り消し。範囲外の数字は範囲内に丸め、入力できるのは数字だけです（文字や記号は入りません。マイナス記号は key shift のみ）。つまみや音にもすぐ反映されます
 - コンソールで音の経路を確認できるデバッグモード
 
 ## 使い方
@@ -176,7 +176,8 @@ elita1/
     ├── mml.js          MML プレーヤー（アイコンのジングル、`ELITA.mml`）
     ├── log.js          セッションログの記録（txt 保存）
     ├── midi.js         MIDI 入力（Web MIDI、CC ラーン、クロック同期）
-    └── theme.js        配色テーマの切り替えと色の編集
+    ├── theme.js        配色テーマの切り替えと色の編集
+    └── settings.js     Settings ウィンドウ（フィルター方式、ハードシンクのアンチエイリアス、アナログ感）
 ```
 
 ### 仕組み
@@ -194,7 +195,15 @@ ELITA.loadSy1(text)   // .sy1 のテキストを読み込む
 
 `engine.js`（と calib / voice / fx / notes）は `ELITA.onChange` を受けて Tone.js の各ノードを更新します。画面と音源が分かれているので、音源だけ差し替えることもできます。
 
-実験機能（ラダーフィルター）: URL の末尾に `?filter=ladder` を付けて開くと、フィルターが 4 ポールのラダー型（24 dB/oct）になります。コンソールでは `ELITA.engine.filterMode('ladder')` / `('biquad')` で切り替えられます（既定は `biquad`）。ローパス 24 dB のタイプだけが対象です。
+**Settings**（Patch Parameters 下部の「settings」ボタン）: パッチのパラメーターではなく、エンジンの動作を選びます。選んだ内容はこのブラウザーに保存されます（`localStorage`）。既定値はすべて、従来（0.5.53）と同じ音です。
+
+- **Filter engine**: Biquad（既定、Synth1 の録音に合わせて調整）/ Ladder（実験、4 ポール 24 dB/oct）。ローパス 24 dB のタイプだけがラダーになります。以前の `?filter=ladder` は廃止しました。
+- **Ladder character**: Soft limit（既定）/ Per-stage tanh（各段で tanh、トランジスターラダー風）。
+- **Hard sync anti-aliasing**: Off（既定）/ PolyBLEP。同期リセットとスレーブ波形のエッジの折り返しを減らします（実測で折り返し成分が約 15〜20 dB 減）。
+- **Voice variance**: Off / Low / Medium / High。ボイスごとに固定のピッチとカットオフのずれ（約 2 / 5 / 9 セント）。
+- **Slow drift**: Off / Low / Medium / High。ピッチとカットオフがゆっくりランダムに揺れます。
+
+コンソールからは `ELITA.settings.get()` / `ELITA.settings.set('filter', 'ladder')` / `ELITA.settings.reset()`、`ELITA.engine.filterMode('ladder' | 'biquad')` でも切り替えられます。
 
 信号経路:
 

@@ -28,7 +28,7 @@
   ];
   box.innerHTML = '<div class="ph"><span>Patch Parameters</span><small id="pcount"></small></div>' +
     '<div class="pn"><b id="pn1">Init patch</b><span id="pn2">&nbsp;</span></div>' +
-    '<div class="tools"><label><input type="checkbox" id="onlych"> changed only</label><button type="button" id="pexp" title="save the current panel as a Synth1 .sy1 patch">export .sy1</button><button type="button" id="pcopy">copy text</button></div>' +
+    '<div class="tools"><label><input type="checkbox" id="onlych"> changed only</label><button type="button" id="pexp" title="save the current panel as a Synth1 .sy1 patch">export .sy1</button></div>' +
     '<div class="scroll" id="pscroll"></div>' +
     '<div class="foot"><span><i class="sw1" style="background:var(--led)"></i>changed from default</span><span style="opacity:.6">– not used = engine ignores it</span></div>';
   // allowed range per parameter (default 0..127). Typed values are clamped to it.
@@ -99,11 +99,6 @@
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type: 'text/plain'}));
     a.download = nm.replace(/[\\/:*?"<>|]/g, '_') + '.sy1'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     $('pname').textContent = nm; $('pinfo').textContent = 'exported ' + a.download;
-  };
-  $('pcopy').onclick = () => {
-    const P = E.params, out = ['# ' + $('pname').textContent];
-    SEC.forEach(([title, groups]) => { out.push('', '[' + title + ']'); groups.forEach(([gt, items]) => items.forEach(([no, label, dec]) => { if (P[no] === undefined) return; const t = dec ? dec(P[no]) : null; out.push((no === 'vol' ? '   ' : ('#' + no).padStart(3)) + ' ' + (gt ? gt + ' ' : '') + label + ' = ' + P[no] + (t != null ? ' (' + t + ')' : '')); })); });
-    navigator.clipboard && navigator.clipboard.writeText(out.join('\n')).then(() => { $('pcopy').textContent = 'copied'; setTimeout(() => $('pcopy').textContent = 'copy text', 1200); });
   };
   const fit = () => { const m = $('main'); if (m) box.style.setProperty('--mainh', m.getBoundingClientRect().height + 'px'); };
   addEventListener('load', () => { fit(); render(); }); addEventListener('resize', fit); setTimeout(() => { fit(); render(); }, 500);

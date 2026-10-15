@@ -150,6 +150,6 @@ function applyFx(p) {
   S.chorus2.feedback.value = 0;
   S.chorus2.wet.value = p[66] && n >= 3 ? p[56] / 127 * (n === 4 ? 0.8 : 0.5) : 0;
 }
-Object.assign(S, {makeFx, makeDelay, applyFx, applyDelay});
+Object.assign(S, {makeFx, makeDelay, applyFx});
 S.scan.push(applyFx, applyDelay);
 })();
