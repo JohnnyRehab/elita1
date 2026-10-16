@@ -5,6 +5,14 @@
 バージョンを上げるときは、ここに「何をしたか」を追記します（新しいものが上）。
 バージョンの数字は Claude が判断して上げ、上げる前に確認を取ります。表示は `index.html` のバージョン表示と UPDATED の日付です。
 
+## ver 0.5.55 — 2026.10.16
+
+- **Settings に「Voice limits」を追加**: ELITA（既定。5 ボイス、unison 最大 3）/ **Synth1 spec**（実機の画面の範囲。ボイス数はパッチの poly 値（`#94`、1〜32）のとおり、unison は最大 8）。Synth1 spec のあいだは、タイトルバーに黄色の「SYNTH1 SPEC MODE」、鍵盤横の表示に「(Synth1 spec)」、Settings ボタンの黄色表示で、そのことを画面に明示します。選択はブラウザーに保存されます。
+- ボイス数が実行時に変わるようにしました（以前は起動時に 5 つ作って固定）: 必要な数まで増やし、減らすときは余分なボイスを音の経路から外します（待機中でも発振が動き続けるため）。`Voice.dispose()` を追加。`S.POLY` / `S.UNI_MAX` が現在の上限で、`ELITA.engine.POLY` / `unisonMax` / `limits` から読めます。
+- 計測（このコンテナのソフトウェア音声での相対値）: ELITA（5 ボイス）と Synth1 spec の poly 16 は実時間どおり、poly 32 は待機中でも実時間の約半分の速さしか進みません。つまり、poly 32 と unison 8 は負荷が非常に大きく、実機での目安は未測定です。ボイス数の増減と unison 8（fat 波形 ×8）、poly 32 での 24 音同時発音は、エラーなく動きました。
+- 未対応のまま: Synth1 spec でも、パルス波の unison は対応していません（Tone.js の fat oscillator に pulse がないため）。待機中のボイスを止めて負荷を下げる工夫も、今後の課題です。
+- README（日本語・英語）と画面画像を更新。`docs/synth1mode.png` を追加。
+
 ## ver 0.5.54 — 2026.10.15
 
 - **Settings 画面を追加**（Patch Parameters 下部の「settings」ボタン、`js/settings.js`）: エンジンの動作を選べます。選択はブラウザーに保存。**`?filter=ladder` は廃止**し、「Filter engine（Biquad / Ladder）」で選ぶようにしました。既定値はすべて従来と同じ音です。

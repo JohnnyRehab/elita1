@@ -39,5 +39,5 @@
   addEventListener('blur', () => E.allOff());
   // first gesture anywhere starts the audio context; status text
   addEventListener('pointerdown', () => E.start(), {once: true});
-  setInterval(() => { const v = E.voices(); $('vc').textContent = v ? 'voices ' + v.filter(x => x.on).length + '/' + E.POLY + ($('vc').dataset.v ? '  vel ' + $('vc').dataset.v : '') : 'click / press a key to start audio'; }, 150);
+  setInterval(() => { const v = E.voices(); $('vc').textContent = v ? 'voices ' + v.filter(x => x.on).length + '/' + E.POLY + (E.limits === 'synth1' ? ' (Synth1 spec)' : '') + ($('vc').dataset.v ? '  vel ' + $('vc').dataset.v : '') : 'click / press a key to start audio'; }, 150);
 })();

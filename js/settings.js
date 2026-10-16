@@ -1,10 +1,14 @@
 /* Settings window ("settings" button under Patch Parameters).
    Engine options that are not patch parameters. The choice is kept in this browser (localStorage); nothing is sent anywhere.
    Defaults = the sound of ver 0.5.53 (everything below is off or "standard").
-   ELITA.settings = {get(), set(key, value), reset(), items}      keys: filter / ladder / syncAA / slop / drift */
+   ELITA.settings = {get(), set(key, value), reset(), items}      keys: limits / filter / ladder / syncAA / slop / drift
+   "Voice limits" = Synth1 spec lifts the ELITA limits (5 voices, unison 3) to the ranges of the real Synth1 panel (poly up to 32 = the patch's poly number, unison up to 8).
+   While it is on, a badge in the title bar says so. */
 (function () {
   const E = window.ELITA, S = E.core, KEY = 'elita1-settings';
   const ITEMS = [
+    {k: 'limits', title: 'Voice limits', opts: [['elita', 'ELITA (5 voices, unison 3)'], ['synth1', 'Synth1 spec (poly 32, unison 8)']],
+     note: 'ELITA keeps 5 voices and at most 3 unison voices per oscillator, to stay light. Synth1 spec uses the ranges of the real panel: as many voices as the patch\'s poly number (up to 32) and up to 8 unison voices. It needs much more CPU (the sound may crackle on a slow computer), and a badge in the title bar shows that it is on. Unison is still not available for pulse waves.'},
     {k: 'filter', title: 'Filter engine', opts: [['biquad', 'Biquad'], ['ladder', 'Ladder']],
      note: 'Biquad: the standard filter, tuned to Synth1 recordings. Ladder: experimental 4-pole 24 dB/oct (zero-delay feedback). Only Low-pass 24 dB uses the ladder; HP / BP / 12 dB stay biquad.'},
     {k: 'ladder', title: 'Ladder character', opts: [['soft', 'Soft limit'], ['stage', 'Per-stage tanh']], needs: ['filter', 'ladder'],
@@ -16,16 +20,26 @@
     {k: 'drift', title: 'Slow drift', opts: [[0, 'Off'], [1, 'Low'], [2, 'Medium'], [3, 'High']],
      note: 'Pitch and cutoff of each voice wander slowly and randomly (time constant about 3 s). Not repeatable from note to note.'},
   ];
-  const DEF = {filter: 'biquad', ladder: 'soft', syncAA: 0, slop: 0, drift: 0};
+  const DEF = {limits: 'elita', filter: 'biquad', ladder: 'soft', syncAA: 0, slop: 0, drift: 0};
   const SLOP = [0, 2, 5, 9], DRIFT = [0, 2, 4, 8];
   const ok = (k, v) => { const it = ITEMS.find(x => x.k === k); return !!it && it.opts.some(o => o[0] === v); };
   let cur = Object.assign({}, DEF);
   try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && typeof s === 'object') Object.keys(DEF).forEach(k => { if (ok(k, s[k])) cur[k] = s[k]; }); } catch (e) { /* no storage */ }
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(cur)); } catch (e) { /* ignore */ } };
   function apply() {
+    S.LIMITS = cur.limits; badge();
     S.FILTER = cur.filter; S.LADDER_SAT = cur.ladder; S.SYNC_AA = !!cur.syncAA;
     S.analog.slop = SLOP[cur.slop]; S.analog.drift = DRIFT[cur.drift];
     if (E.engine && E.engine.refresh) E.engine.refresh();
+  }
+  // Title-bar badge and highlighted settings button while the Synth1 spec is on
+  function badge() {
+    const on = cur.limits === 'synth1', t = document.getElementById('title');
+    let b = document.getElementById('s1mode');
+    if (on && !b && t) { b = document.createElement('h3'); b.id = 's1mode'; b.className = 's1mode'; b.title = 'Settings > Voice limits: Synth1 spec (poly up to 32, unison up to 8)'; b.textContent = 'SYNTH1 SPEC MODE'; const v = t.querySelector('.version'); t.insertBefore(b, v || null); }
+    if (b) b.hidden = !on;
+    const sb = document.getElementById('pset'); if (sb) sb.classList.toggle('s1on', on);
+    document.body.classList.toggle('s1spec', on);
   }
   function set(k, v) { if (!ok(k, v)) return false; cur[k] = v; save(); apply(); paint(); return true; }
   function reset() { cur = Object.assign({}, DEF); save(); apply(); paint(); }
@@ -48,7 +62,11 @@
   #setdlg .nt{ margin:4px 0 0; font-size:11px; opacity:.8; }
   #setdlg .tf{ display:flex; gap:6px; padding:5px 10px; border-top:1px solid var(--dk); background:var(--hd); align-items:center; }
   #setdlg .tf small{ margin-left:auto; opacity:.8; }
-  #plist .tools button#pset{ background:var(--dk); }`;
+  #plist .tools button#pset{ background:var(--dk); }
+  #plist .tools button#pset.s1on{ background:var(--hi); color:var(--hi-fg); }
+  #title .s1mode{ padding:1px 10px; background:var(--hi); color:var(--hi-fg); font-weight:700; font-size:11px; letter-spacing:.04em; white-space:nowrap; }
+  #title .s1mode[hidden]{ display:none; }
+  #vc{ white-space:nowrap; }`;
   document.head.appendChild(css);
   const dlg = document.createElement('dialog'); dlg.id = 'setdlg';
   dlg.innerHTML = '<div class="th"><span>Settings</span><button type="button" id="setclose">close</button></div><div class="tb">' +
@@ -70,5 +88,5 @@
   dlg.querySelector('#setclose').onclick = () => dlg.close();
   const tools = document.querySelector('#plist .tools');
   if (tools) { const b = document.createElement('button'); b.type = 'button'; b.id = 'pset'; b.textContent = 'settings'; b.title = 'engine settings (filter, hard sync, analog character)'; tools.appendChild(b); b.onclick = () => { paint(); dlg.showModal(); }; }
-  paint();
+  badge(); paint();
 })();

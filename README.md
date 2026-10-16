@@ -8,13 +8,17 @@ Synth1 のパッチ（`.sy1`）をブラウザで試聴するための、フリ�
 > **Synth1 の再現ではありません。** 内部構成（OSC → Filter → Amp、LFO、Mod Envelope、各エフェクト）は Synth1 に合わせていますが、各つまみの値と音色の対応は推測を含み、Synth1 と同じ音にはなりません。パッチの「だいたいの傾向」を聴くためのものです。
 > 本プロジェクトは Synth1 の作者・配布元とは無関係の非公式プロジェクトです。
 
-現在のバージョン: **ver 0.5.54**（更新内容は [history.md](history.md)、英語版は [history.en.md](history.en.md)）
+現在のバージョン: **ver 0.5.55**（更新内容は [history.md](history.md)、英語版は [history.en.md](history.en.md)）
 
 ![ELITA-1](docs/screenshot.png)
 
 | Settings | テーマ | MIDI 入力 |
 | --- | --- | --- |
 | ![Settings](docs/settings.png) | ![テーマ（Dark）](docs/theme.png) | ![MIDI 入力](docs/midi.png) |
+
+Settings の「Voice limits」を「Synth1 spec」にすると、タイトルバーに黄色の「SYNTH1 SPEC MODE」が出ます（下の画像）。
+
+![Synth1 spec mode](docs/synth1mode.png)
 
 
 ## 特長
@@ -24,7 +28,7 @@ Synth1 のパッチ（`.sy1`）をブラウザで試聴するための、フリ�
 - `.sy1` パッチの読み込み（1 ファイル、またはフォルダを指定して ↑↓ キーで切り替え）
 - 画面下の鍵盤と PC キーボードで演奏（オクターブ切替あり）。外部の MIDI 機器やシーケンサーからも演奏可能（MIDI 入力、CC ラーン、クロック同期）
 - 出力波形のオシロスコープ表示
-- **Settings**: フィルター方式（Biquad / Ladder）、ハードシンクのアンチエイリアス（PolyBLEP）、ボイスごとの個体差とドリフトを選べます（下の「仕組み」を参照）
+- **Settings**: Voice limits（ELITA / Synth1 spec）、フィルター方式（Biquad / Ladder）、ハードシンクのアンチエイリアス（PolyBLEP）、ボイスごとの個体差とドリフトを選べます（下の「仕組み」を参照）
 - **テーマ**: 配色 4 種と、色ごとの編集・書き出し・読み込み
 - **MIDI 入力**（CC ラーン、MIDI クロックで BPM 同期）、セッションログ、`.sy1` の書き出し
 - 画面上部の「UPDATED」をクリックすると、`history.md` の最新の更新内容が見られます（`show all` で全履歴）。
@@ -208,6 +212,7 @@ ELITA.loadSy1(text)   // .sy1 のテキストを読み込む
 
 **Settings**（Patch Parameters 下部の「settings」ボタン）: パッチのパラメーターではなく、エンジンの動作を選びます。選んだ内容はこのブラウザーに保存されます（`localStorage`）。既定値はすべて、従来（0.5.53）と同じ音です。
 
+- **Voice limits**: ELITA（既定。5 ボイス、unison は 1 オシレーターあたり最大 3 本。負荷を抑えるため）/ Synth1 spec（実機の画面の範囲に合わせます。ボイス数はパッチの poly 値のとおり最大 32、unison は最大 8 本）。Synth1 spec のあいだは、タイトルバーに黄色の「SYNTH1 SPEC MODE」、鍵盤の横の表示に「(Synth1 spec)」、Settings ボタンの黄色表示が出ます。CPU 負荷がかなり大きくなり（待機中のボイスも動き続けます）、遅い PC では音が途切れることがあります。パルス波の unison は、このモードでも未対応です。
 - **Filter engine**: Biquad（既定、Synth1 の録音に合わせて調整）/ Ladder（実験、4 ポール 24 dB/oct）。ローパス 24 dB のタイプだけがラダーになります。以前の `?filter=ladder` は廃止しました。
 - **Ladder character**: Soft limit（既定）/ Per-stage tanh（各段で tanh、トランジスターラダー風）。
 - **Hard sync anti-aliasing**: Off（既定）/ PolyBLEP。同期リセットとスレーブ波形のエッジの折り返しを減らします（実測で折り返し成分が約 15〜20 dB 減）。
@@ -298,11 +303,11 @@ Synth1 のファクトリープリセット相当 128 音色（すべて `ver=10
 
 ### その他
 
-- ボイス数は 5 固定です（`calib.js` の `POLY`）。Synth1 の最大ポリ数とは異なります。
+- 既定ではボイス数は 5 です（`calib.js` の `POLY`）。Synth1 の画面の範囲（poly 最大 32）に合わせたいときは、Settings の「Voice limits」を「Synth1 spec」にします。
 - MIDI 入力は Web MIDI（Chrome / Edge）のみ対応です。MIDI 出力、プログラムチェンジ、MIDI の `#50` / `#51` / `#86–89`（sens 系）は未対応です。
 - 画面は、本体 960px と右側のパラメーター一覧 380px の固定幅で、スマートフォンの縦画面には最適化していません。タッチでの演奏は画面の鍵盤で可能です。
 - ブラウザは Chrome / Edge / Firefox / Safari の最新版を想定しています。ハードシンク（OSC2 の sync）は AudioWorklet を使うため、AudioWorklet が使えない環境では無効になります。
-- unison の本数は、CPU 負荷と音色の再現性のため最大 3 に制限しています（`calib.js` の `UNI_MAX`）。パッチの `#93` が 4 以上のときは 3 に丸め、パラメーター一覧に `clamped → 3` と出ます。パルス波は unison の対象外です（OSC が pulse の間は、unison が ON でも1本のままです。例: ebm bass）。
+- unison の本数は、既定では CPU 負荷と音色の再現性のため最大 3 に制限しています（`calib.js` の `UNI_MAX`。「Synth1 spec」では最大 8）。パッチの `#93` が上限を超えるときは上限に丸め、パラメーター一覧に `clamped → 3` と出ます。パルス波は unison の対象外です（OSC が pulse の間は、unison が ON でも1本のままです。例: ebm bass）。
 - 長時間の連続再生や、多数のボイス + unison + Chorus 2 段での CPU 負荷は未検証です。
 
 ## 今後の候補

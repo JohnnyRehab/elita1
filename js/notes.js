@@ -1,7 +1,6 @@
 /* ELITA-1 note handling: poly / mono / legato voice allocation, key sync, arpeggiator. */
 (function () {
 const E = window.ELITA, P = E.params, S = (E.core = E.core || {});
-const {POLY} = S;
 // Poly: oldest released voice first, else steal the oldest held one.
 // Mono / legato (#38 = 1 / 2): voice 0 only, last-note priority; legato keeps the envelopes running while notes overlap.
 const stack = [];
@@ -34,7 +33,7 @@ function voiceOn(n, vel = 0.8) {
   }
   if (S.voices.some(v => v.note === n)) return;
   const byAge = (a, b) => a.t - b.t;
-  const pool = S.voices.slice(0, Math.max(1, Math.min(POLY, P[94] || POLY)));
+  const pool = S.voices.slice(0, Math.max(1, Math.min(S.POLY, P[94] || S.POLY)));
   const v = pool.filter(x => !x.on).sort(byAge)[0] || pool.slice().sort(byAge)[0];
   v.down(n, vel);
 }

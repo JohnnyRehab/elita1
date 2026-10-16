@@ -8,13 +8,17 @@ The panel is built with NexusUI.js and the sound with Tone.js (Web Audio).
 > **This is not a reproduction of Synth1.** The internal structure (OSC → Filter → Amp, LFO, Mod Envelope, effects) follows Synth1, but the mapping from knob values to sound includes guesses, so it will not sound the same as Synth1. It is meant for hearing the general character of a patch.
 > This is an unofficial project and has no connection with the author or distributor of Synth1.
 
-Current version: **ver 0.5.54** (see [history.en.md](history.en.md) for what changed)
+Current version: **ver 0.5.55** (see [history.en.md](history.en.md) for what changed)
 
 ![ELITA-1](docs/screenshot.png)
 
 | Settings | Theme | MIDI input |
 | --- | --- | --- |
 | ![Settings](docs/settings.png) | ![Theme (Dark)](docs/theme.png) | ![MIDI input](docs/midi.png) |
+
+When "Voice limits" in Settings is set to "Synth1 spec", a yellow "SYNTH1 SPEC MODE" badge appears in the title bar (image below).
+
+![Synth1 spec mode](docs/synth1mode.png)
 
 
 ## Features
@@ -24,7 +28,7 @@ Current version: **ver 0.5.54** (see [history.en.md](history.en.md) for what cha
 - Loads `.sy1` patches (a single file, or pick a folder and switch with the ↑↓ keys)
 - Play with the on-screen keyboard and the PC keyboard (with octave shift). Can also be played from external MIDI devices and sequencers (MIDI input, CC learn, clock sync)
 - Oscilloscope display of the output waveform
-- **Settings**: choose the filter engine (Biquad / Ladder), hard-sync anti-aliasing (PolyBLEP), and per-voice variance and drift (see "How it works" below)
+- **Settings**: choose the voice limits (ELITA / Synth1 spec), the filter engine (Biquad / Ladder), hard-sync anti-aliasing (PolyBLEP), and per-voice variance and drift (see "How it works" below)
 - **Themes**: 4 colour themes, with per-colour editing, export and import
 - **MIDI input** (CC learn, BPM sync from MIDI clock), session log, and `.sy1` export
 - Click "UPDATED" at the top of the screen to see the latest entry of `history.md` (`show all` for the whole history). The in-app viewer shows the Japanese `history.md`; the English version is [history.en.md](history.en.md).
@@ -208,6 +212,7 @@ ELITA.loadSy1(text)   // load .sy1 text
 
 **Settings** (the "settings" button at the bottom of Patch Parameters): these are not patch parameters; they choose how the engine behaves. Your choices are saved in this browser (`localStorage`). All defaults give the same sound as before (0.5.53).
 
+- **Voice limits**: ELITA (default: 5 voices, at most 3 unison voices per oscillator, to stay light) / Synth1 spec (the ranges of the real panel: as many voices as the patch's poly number, up to 32, and up to 8 unison voices). While Synth1 spec is on, a yellow "SYNTH1 SPEC MODE" badge is shown in the title bar, "(Synth1 spec)" appears next to the voice counter at the keyboard, and the settings button is lit yellow. CPU load becomes much higher (idle voices keep running too), and the sound may crackle on a slow computer. Unison for pulse waves is still not supported in this mode.
 - **Filter engine**: Biquad (default, tuned to Synth1 recordings) / Ladder (experimental, 4-pole 24 dB/oct). Only the low-pass 24 dB type uses the ladder. The former `?filter=ladder` URL option has been removed.
 - **Ladder character**: Soft limit (default) / Per-stage tanh (tanh on every stage, transistor-ladder style).
 - **Hard sync anti-aliasing**: Off (default) / PolyBLEP. Reduces aliasing from the sync reset and the edges of the slave wave (measured: about 15–20 dB less aliased energy).
@@ -298,11 +303,11 @@ The 128 sounds equivalent to the Synth1 factory presets (all `ver=105`, paramete
 
 ### Other
 
-- The voice count is fixed at 5 (`POLY` in `calib.js`). It differs from the maximum polyphony of Synth1.
+- By default the voice count is 5 (`POLY` in `calib.js`). To match the range of the Synth1 panel (poly up to 32), set "Voice limits" in Settings to "Synth1 spec".
 - MIDI input works only with Web MIDI (Chrome / Edge). MIDI output, program change and the MIDI `#50` / `#51` / `#86–89` (sens group) are not supported.
 - The screen has a fixed width (960 px for the main part plus 380 px for the parameter list on the right) and is not optimised for a phone in portrait. Touch playing is possible with the on-screen keyboard.
 - The latest versions of Chrome / Edge / Firefox / Safari are assumed. Hard sync (OSC2 sync) uses an AudioWorklet, so it is disabled where AudioWorklet is unavailable.
-- Unison is limited to 3 voices for CPU load and repeatable timbre (`UNI_MAX` in `calib.js`). When a patch's `#93` is 4 or more, it is clamped to 3 and the parameter list shows `clamped → 3`. Pulse waves are not unisoned (while an OSC is pulse it stays a single voice even with unison ON; for example ebm bass).
+- By default unison is limited to 3 voices for CPU load and repeatable timbre (`UNI_MAX` in `calib.js`; 8 in "Synth1 spec"). When a patch's `#93` is above the limit, it is clamped to the limit and the parameter list shows `clamped → 3`. Pulse waves are not unisoned (while an OSC is pulse it stays a single voice even with unison ON; for example ebm bass).
 - CPU load in long continuous playback, or with many voices + unison + 2 chorus stages, has not been checked.
 
 ## Ideas for later

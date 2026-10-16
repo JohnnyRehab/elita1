@@ -6,6 +6,14 @@ When the version is raised, what was done is added here (newest first).
 Claude decides when to raise the version number and asks for confirmation first. The version shown on screen is the version label and the UPDATED date in `index.html`.
 The in-app "UPDATED" window reads the Japanese `history.md`; this file is the English copy.
 
+## ver 0.5.55 — 2026.10.16
+
+- **Added "Voice limits" to Settings**: ELITA (default: 5 voices, unison up to 3) / **Synth1 spec** (the ranges of the real panel: the voice count follows the patch's poly number (`#94`, 1–32) and unison goes up to 8). While Synth1 spec is on, the screen says so: a yellow "SYNTH1 SPEC MODE" badge in the title bar, "(Synth1 spec)" next to the voice counter at the keyboard, and the settings button lit yellow. The choice is saved in the browser.
+- The voice count can now change at run time (before, 5 voices were created at start-up and fixed): voices are added up to the needed number, and when the count goes down the extra voices are removed from the audio graph (idle voices keep their oscillators running). Added `Voice.dispose()`. `S.POLY` / `S.UNI_MAX` are the current limits, readable through `ELITA.engine.POLY` / `unisonMax` / `limits`.
+- Measurement (relative values with this container's software audio): ELITA (5 voices) and Synth1 spec with poly 16 run in real time; with poly 32 the audio clock advances at only about half of real time even when idle. So poly 32 with unison 8 is very heavy, and what to expect on a real machine has not been measured. Changing the voice count, unison 8 (fat waves ×8) and 24 simultaneous notes with poly 32 all worked without errors.
+- Still not supported: unison for pulse waves, even in Synth1 spec (Tone.js fat oscillators have no pulse). Stopping idle voices to reduce the load is a task for later.
+- Updated the README (Japanese and English) and the screenshots. Added `docs/synth1mode.png`.
+
 ## ver 0.5.54 — 2026.10.15
 
 - **Added a Settings window** (the "settings" button below Patch Parameters, `js/settings.js`): lets you choose how the engine behaves. The choice is saved in the browser. **`?filter=ladder` is removed**; use "Filter engine (Biquad / Ladder)" instead. All defaults give the same sound as before.

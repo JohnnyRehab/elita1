@@ -6,7 +6,7 @@
    Shared state lives in ELITA.core (S). */
 (function () {
 const E = window.ELITA, P = E.params, S = (E.core = E.core || {});
-const {POLY, UNI_MAX} = S, {arp, arpStop, allOff, voiceOn, voiceOff, noteOn, noteOff} = S;
+const {arp, arpStop, allOff, voiceOn, voiceOff, noteOn, noteOff} = S;
 let prevMode = null, prevArp = false;
 async function initAudio() {
   try {
@@ -34,10 +34,20 @@ async function initAudio() {
   S.delay.output.chain(S.panner, S.lim, S.clip, Tone.getDestination());
   S.clip.connect(S.wave);
   window.__n = {fx: S.fx, master: S.master, eq: S.eq, toneLo: S.toneLo, toneHi: S.toneHi, chorus: S.chorus, chorus2: S.chorus2, dli: S.delay.input, dlo: S.delay.output, panner: S.panner, lim: S.lim, clip: S.clip};
-  S.voices = Array.from({length: POLY}, (_, i) => { const v = new S.Voice(S.master, S.lfoOut); v.idx = i; return v; });
+  S.voices = [];
   applyAll();
 }
+// Voice count: ELITA limits = 5 fixed; Synth1 spec = the poly number of the patch (#94, 1..32). Grows on demand and removes the extra voices (their oscillators would keep running otherwise).
+function syncVoices() {
+  const syn = S.LIMITS === 'synth1';
+  S.UNI_MAX = syn ? S.SYNTH1_LIM.uni : 3;
+  S.POLY = syn ? Math.max(1, Math.min(S.SYNTH1_LIM.poly, P[94] || 16)) : 5;
+  if (!S.voices || !S.master) return;
+  if (S.voices.length > S.POLY) { allOff(); S.voices.splice(S.POLY).forEach(v => v.dispose()); }
+  while (S.voices.length < S.POLY) { const v = new S.Voice(S.master, S.lfoOut); v.idx = S.voices.length; S.voices.push(v); }
+}
 function applyAll() {
+  syncVoices();
   S.dbgParams();
   if (P[38] !== prevMode) { prevMode = P[38]; allOff(); }
   if (!!P[59] !== prevArp) { prevArp = !!P[59]; arp.held.length = 0; arpStop(); allOff(); }   // switching the arpeggiator releases held notes   // release everything when the play mode changes
@@ -65,6 +75,6 @@ window.ELITA.onChange = () => refresh();
   window.ELITA.setBpm = v => { v = set(v); if (b) b.value = v; }; }
 window.ELITA.bpm = () => S.BPM;
 setInterval(() => { if (S.voices && S.analog.drift > 0) S.voices.forEach(v => v.setAnalog(S.analog, true)); }, 100);   // slow drift (Settings), only while it is on
-window.ELITA.engine = {refresh, filterMode: m => { if (m === 'ladder' || m === 'biquad') { if (E.settings) E.settings.set('filter', m); else { S.FILTER = m; refresh(); } } return S.FILTER; }, bend: s => { S.BEND = +s || 0; if (S.voices) S.voices.forEach(v => v.freq && v.setPitch(P)); }, rawOn: voiceOn, rawOff: voiceOff, lfoHz: () => S.lfos.map(l => l.frequency.value), start, noteOn, noteOff, allOff, voices: () => S.voices, wave: () => S.wave, POLY, used: S.usedSet, unisonMax: UNI_MAX};
+window.ELITA.engine = {refresh, get POLY() { return S.POLY; }, get unisonMax() { return S.UNI_MAX; }, get limits() { return S.LIMITS; }, filterMode: m => { if (m === 'ladder' || m === 'biquad') { if (E.settings) E.settings.set('filter', m); else { S.FILTER = m; refresh(); } } return S.FILTER; }, bend: s => { S.BEND = +s || 0; if (S.voices) S.voices.forEach(v => v.freq && v.setPitch(P)); }, rawOn: voiceOn, rawOff: voiceOff, lfoHz: () => S.lfos.map(l => l.frequency.value), start, noteOn, noteOff, allOff, voices: () => S.voices, wave: () => S.wave, used: S.usedSet};
 S.scan.push(applyAll);
 })();

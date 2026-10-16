@@ -1,7 +1,7 @@
 /* ELITA-1 voice: oscillators (+unison / sub / ring / sync / FM / noise) -> filter -> amp, plus the envelopes and LFO sends of one note. */
 (function () {
 const E = window.ELITA, P = E.params, S = (E.core = E.core || {});
-const {UNI_MAX, REFV, SUBW, OSC1, OSC2, FTYPE, time, CUT_OCT, Q_OFF, cutoff, cutoffLad, LAD_K} = S;
+const {REFV, SUBW, OSC1, OSC2, FTYPE, time, CUT_OCT, Q_OFF, cutoff, cutoffLad, LAD_K} = S;
 const SL1 = [-0.8, 0.7, -0.45, 0.9, -1], SL2 = [0.6, -0.9, 0.75, -0.5, 0.35], SLC = [0.6, -0.4, 0.9, -0.7, 0.2];   // per-voice offsets (-1..1) for OSC1 / OSC2 pitch and the cutoff
 class Voice {
   constructor(out, lfoSrc) {
@@ -26,6 +26,7 @@ class Voice {
     this.fout.connect(this.satPre); this.satPre.connect(this.satShaper); this.satShaper.connect(this.satWet); this.satWet.connect(this.amp);
     this.amp.connect(this.vg); this.vg.connect(out);
     this.sd = lfoSrc.map(l => { const g = new Tone.Gain(0); l.connect(g); return g; });   // LFO depth sends
+    this.lfoSrc = lfoSrc;
     this.dst = [[], []];
     // Sub oscillator: follows OSC1 pitch (0 / -1 oct), no unison
     this.so = new Tone.OmniOscillator({type: 'sine'}); this.sg = new Tone.Gain(0);
@@ -87,6 +88,18 @@ class Voice {
       this.r1.stop(); this.r2.stop(); this.gr1.gain.value = this.gr2.gain.value = 0;
     }
   }
+  // Remove the voice from the audio graph (used when Settings > Voice limits or the poly number lowers the voice count)
+  dispose() {
+    try { this.up(); } catch (e) { /* not started */ }
+    this.lfoSrc.forEach((l, i) => { try { l.disconnect(this.sd[i]); } catch (e) { /* already gone */ } });
+    Object.keys(this).forEach(k => {
+      const x = this[k];
+      (Array.isArray(x) ? x : [x]).forEach(n => {
+        if (!n || typeof n !== 'object' || n === this.lfoSrc) return;
+        try { if (typeof n.dispose === 'function') n.dispose(); else if (typeof n.disconnect === 'function' && !(n instanceof AudioParam)) n.disconnect(); } catch (e) { /* already disposed */ }
+      });
+    });
+  }
   setType(o, t) { if (o.type !== t) o.type = t; }
   // switch the signal path between the biquad filter and the ladder (only reconnects when the choice changed)
   setLadder(on) {
@@ -125,7 +138,7 @@ class Voice {
   // oscillators: unison, mix, ring / sync / noise, sub.  Returns which extra copies are active (lay = unison pitch layer, pan = unison stereo width).
   applyOsc(p) {
     // Unison: fat oscillators (not available for pulse)
-    const uni = p[73] ? Math.max(1, Math.min(UNI_MAX, p[93])) : 1, spread = p[75] / 127 * 100;
+    const uni = p[73] ? Math.max(1, Math.min(S.UNI_MAX, p[93])) : 1, spread = p[75] / 127 * 100;
     const shape = (o, t) => {
       const ty = uni > 1 && t !== 'pulse' ? 'fat' + t : t;
       this.setType(o, ty);

@@ -1,7 +1,6 @@
 /* ELITA-1 debug mode (console helpers). Not needed for playing. */
 (function () {
 const E = window.ELITA, P = E.params, S = (E.core = E.core || {});
-const {POLY, UNI_MAX} = S;
 // ================= debug mode =================
 // Enable:  open the page with ?debug  (or #debug), or run  ELITA.debug.on()  in the console.  Disable: ELITA.debug.off()
 // Console helpers:  ELITA.debug.graph()   signal path of the whole synth (voice + effect chain)
@@ -40,7 +39,7 @@ function dbgNote(kind, n) {
 }
 function pathString(v) {
   const o1 = v.o1, o2 = v.o2, parts = [];
-  const uni = o => o.count > 1 ? ' ×' + o.count + ' unison' + (P[93] > UNI_MAX ? ' (clamped from ' + P[93] + ')' : '') : '';
+  const uni = o => o.count > 1 ? ' ×' + o.count + ' unison' + (P[93] > S.UNI_MAX ? ' (clamped from ' + P[93] + ')' : '') : '';
   if (v.g1.gain.value > 0.0001) parts.push(`OSC1(${o1.type}${uni(o1)}, g=${r3(v.g1.gain.value)})`);
   if (v.g2.gain.value > 0.0001) parts.push(`OSC2(${o2.type}${uni(o2)}, g=${r3(v.g2.gain.value)})`);
   if (v.gr.gain.value > 0.0001) parts.push(`RING(OSC1×OSC2, g=${r3(v.gr.gain.value)})`);
@@ -93,7 +92,7 @@ window.ELITA.debug = {
   graph() {
     if (!S.voices) return console.warn('audio not started yet: click the page or press a key first');
     console.group('%c[ELITA] signal path', C);
-    console.log('Per voice (' + POLY + ' voices):  [OSC1 | OSC2 | RING | SYNC | NOISE | SUB] → FILTER(+filter env) → AMP(+amp env) → sum');
+    console.log('Per voice (' + S.POLY + ' voices):  [OSC1 | OSC2 | RING | SYNC | NOISE | SUB] → FILTER(+filter env) → AMP(+amp env) → sum');
     console.log('Shared:  voice sum → master → EQ → Chorus1 → Chorus2 → Delay → Pan → Limiter → SoftClip → speakers');
     console.log('Modulation: LFO1/LFO2 (shared, all voices), mod envelope (per voice)');
     console.log('Voices'); console.table(S.voices.map(voiceRows));
