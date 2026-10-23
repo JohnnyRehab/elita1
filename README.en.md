@@ -8,7 +8,7 @@ The panel is built with NexusUI.js and the sound with Tone.js (Web Audio).
 > **This is not a reproduction of Synth1.** The internal structure (OSC → Filter → Amp, LFO, Mod Envelope, effects) follows Synth1, but the mapping from knob values to sound includes guesses, so it will not sound the same as Synth1. It is meant for hearing the general character of a patch.
 > This is an unofficial project and has no connection with the author or distributor of Synth1.
 
-Current version: **ver 0.5.55** (see [history.en.md](history.en.md) for what changed)
+Current version: **ver 0.5.56** (see [history.en.md](history.en.md) for what changed)
 
 ![ELITA-1](docs/screenshot.png)
 
@@ -19,6 +19,10 @@ Current version: **ver 0.5.55** (see [history.en.md](history.en.md) for what cha
 When "Voice limits" in Settings is set to "Synth1 spec", a yellow "SYNTH1 SPEC MODE" badge appears in the title bar (image below).
 
 ![Synth1 spec mode](docs/synth1mode.png)
+
+"Key config…" in Settings lets you change the PC key assignments (image below).
+
+![Key config](docs/keyconfig.png)
 
 
 ## Features
@@ -56,8 +60,11 @@ Click once inside the page or press a key to start the audio (a browser autoplay
 | Action | Effect |
 | --- | --- |
 | Click a key on the on-screen keyboard | Plays a note |
-| `A W S E D F T G Y H U J K O L P` | Keyboard (one and a half octaves from C) |
+| `A W S E D F T G Y H U J K O L P` | Keyboard (one and a half octaves from C; the default, can be changed) |
 | `Z` / `X` (or the `<` `>` buttons) | Octave down / up (the C3–C5 label changes) |
+| `↑` / `↓` | Next / previous patch |
+
+The key assignments can be changed in "Key config…" in Settings (next section). While Settings or any other window is open, PC keys do not play notes.
 
 ### Loading patches
 
@@ -150,6 +157,18 @@ Recorded: the notes played (note name, velocity, voice), knob changes (number, n
 the output level about every 0.25 s, errors, and the final state (in `.sy1` format). The log is built inside the browser and is not sent anywhere.
 Attach this txt when you want to tell the developer what the sound was doing.
 
+### Key config (PC key assignments)
+
+"Key config…" in Settings opens the window.
+- All 25 keys (C3–C5), octave down / up, next / previous patch and all notes off can be given any key you like.
+- Click a key of the diagram (or a function row), then press the PC key you want. For the notes, the next key then waits for input by itself. `Esc` stops, `Delete` / `Backspace` clears that assignment.
+- Pressing a key that is already used elsewhere moves it to the new place (the old assignment becomes empty).
+- Presets: ELITA (default, A W S E …) / DAW style (Z S X D C V …, Q 2 W 3 E …, octave on ← →). "reset to default" returns to the default.
+- Keys that cannot be used: Shift / Ctrl / Alt / Meta, Esc, Tab, Enter, Space, Backspace, Delete, F keys and lock keys, because they would clash with window operation.
+- "export .json" / "import .json" save and share the layout. It is saved in this browser (`localStorage`, `elita1-keys`) and sent nowhere.
+- How it works: keys are identified by the physical key (`KeyboardEvent.code`), so the keyboard layout and the Japanese IME state do not matter. Labels show the character of your actual layout where the browser supports it. `js/keymap.js` holds the data, `js/keyconfig.js` is the window.
+- "reset to defaults" in Settings does not reset the key assignments.
+
 ### Themes (switching and editing colours)
 
 The "theme" button at the bottom of Patch Parameters opens the colour window.
@@ -183,6 +202,7 @@ elita1/
     ├── notes.js        note handling (poly / mono / legato) and the arpeggiator
     ├── debug.js        debug mode (for the console)
     ├── engine.js       audio start-up, overall update (applyAll), hookup to the panel, public API (load last of the engine files)
+    ├── keymap.js       PC key assignment data (ELITA.keymap)
     ├── keys.js         keyboard (on-screen / PC keys)
     ├── patches.js      folder selection and patch switching
     ├── scope.js        oscilloscope
@@ -192,7 +212,8 @@ elita1/
     ├── log.js          session log recording (saved as txt)
     ├── midi.js         MIDI input (Web MIDI, CC learn, clock sync)
     ├── theme.js        colour theme switching and colour editing
-    └── settings.js     Settings window (filter engine, hard-sync anti-aliasing, analog character)
+    ├── settings.js     Settings window (filter engine, hard-sync anti-aliasing, analog character)
+    └── keyconfig.js    Key config window
 ```
 
 ### How it works

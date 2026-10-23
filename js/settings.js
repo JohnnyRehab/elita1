@@ -1,7 +1,7 @@
 /* Settings window ("settings" button under Patch Parameters).
    Engine options that are not patch parameters. The choice is kept in this browser (localStorage); nothing is sent anywhere.
    Defaults = the sound of ver 0.5.53 (everything below is off or "standard").
-   ELITA.settings = {get(), set(key, value), reset(), items}      keys: limits / filter / ladder / syncAA / slop / drift
+   ELITA.settings = {get(), set(key, value), reset(), items}      keys: limits / filter / ladder / syncAA / slop / drift (the "Key config…" button opens js/keyconfig.js)
    "Voice limits" = Synth1 spec lifts the ELITA limits (5 voices, unison 3) to the ranges of the real Synth1 panel (poly up to 32 = the patch's poly number, unison up to 8).
    While it is on, a badge in the title bar says so. */
 (function () {
@@ -71,6 +71,7 @@
   const dlg = document.createElement('dialog'); dlg.id = 'setdlg';
   dlg.innerHTML = '<div class="th"><span>Settings</span><button type="button" id="setclose">close</button></div><div class="tb">' +
     ITEMS.map(it => `<div class="it" data-k="${it.k}"><h4>${it.title}</h4><div class="sg">${it.opts.map(o => `<button type="button" data-v="${o[0]}">${o[1]}</button>`).join('')}</div><p class="nt">${it.note}</p></div>`).join('') +
+    '<div class="it"><h4>Keyboard</h4><div class="sg"><button type="button" id="setkeys">Key config…</button></div><p class="nt">Choose which PC keys play the notes (all 25 keys), shift the octave, switch patches and stop all notes. Not reset by "reset to defaults".</p></div>' +
     '</div><div class="tf"><button type="button" id="setreset">reset to defaults</button><small>saved in this browser</small></div>';
   document.body.appendChild(dlg);
   function paint() {
@@ -82,11 +83,12 @@
   }
   dlg.querySelector('.tb').onclick = e => {
     const b = e.target.closest('button'), box = b && b.closest('.it'); if (!b || !box) return;
+    if (b.id === 'setkeys') { dlg.close(); if (E.keyconfig) E.keyconfig.open(); return; }
     const it = ITEMS.find(x => x.k === box.dataset.k), o = it.opts.find(x => String(x[0]) === b.dataset.v); set(it.k, o[0]);
   };
   dlg.querySelector('#setreset').onclick = reset;
   dlg.querySelector('#setclose').onclick = () => dlg.close();
   const tools = document.querySelector('#plist .tools');
-  if (tools) { const b = document.createElement('button'); b.type = 'button'; b.id = 'pset'; b.textContent = 'settings'; b.title = 'engine settings (filter, hard sync, analog character)'; tools.appendChild(b); b.onclick = () => { paint(); dlg.showModal(); }; }
+  if (tools) { const b = document.createElement('button'); b.type = 'button'; b.id = 'pset'; b.textContent = 'settings'; b.title = 'settings: voice limits, filter, hard sync, analog character, keyboard'; tools.appendChild(b); b.onclick = () => { paint(); dlg.showModal(); }; }
   badge(); paint();
 })();

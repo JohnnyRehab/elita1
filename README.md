@@ -8,7 +8,7 @@ Synth1 のパッチ（`.sy1`）をブラウザで試聴するための、フリ�
 > **Synth1 の再現ではありません。** 内部構成（OSC → Filter → Amp、LFO、Mod Envelope、各エフェクト）は Synth1 に合わせていますが、各つまみの値と音色の対応は推測を含み、Synth1 と同じ音にはなりません。パッチの「だいたいの傾向」を聴くためのものです。
 > 本プロジェクトは Synth1 の作者・配布元とは無関係の非公式プロジェクトです。
 
-現在のバージョン: **ver 0.5.55**（更新内容は [history.md](history.md)、英語版は [history.en.md](history.en.md)）
+現在のバージョン: **ver 0.5.56**（更新内容は [history.md](history.md)、英語版は [history.en.md](history.en.md)）
 
 ![ELITA-1](docs/screenshot.png)
 
@@ -19,6 +19,10 @@ Synth1 のパッチ（`.sy1`）をブラウザで試聴するための、フリ�
 Settings の「Voice limits」を「Synth1 spec」にすると、タイトルバーに黄色の「SYNTH1 SPEC MODE」が出ます（下の画像）。
 
 ![Synth1 spec mode](docs/synth1mode.png)
+
+Settings の「Key config…」で、PC キーの割り当てを変えられます（下の画像）。
+
+![Key config](docs/keyconfig.png)
 
 
 ## 特長
@@ -56,8 +60,11 @@ Tone.js と NexusUI は `js/` に同梱しているので、ネットワーク�
 | 操作 | 内容 |
 | --- | --- |
 | 画面下の鍵盤をクリック | 発音 |
-| `A W S E D F T G Y H U J K O L P` | 鍵盤（C から 1 オクターブ半） |
+| `A W S E D F T G Y H U J K O L P` | 鍵盤（C から 1 オクターブ半。既定。変更できます） |
 | `Z` / `X`（または `<` `>` ボタン） | オクターブ下げる / 上げる（C3〜C5 の表記が切り替わります） |
+| `↑` / `↓` | 次 / 前のパッチ |
+
+キー割り当ては Settings の「Key config…」で変更できます（次の節）。設定や他のウィンドウが開いているあいだは、PC キーで音は鳴りません。
 
 ### パッチの読み込み
 
@@ -150,6 +157,18 @@ Patch Parameters 下部の「● log」を押すと記録が始まり、「■ s
 約 0.25 秒ごとの出力レベル、エラー、最後の状態（`.sy1` 形式）。ログはブラウザ内で作られ、どこにも送信されません。
 開発者に音の状況を伝えたいときは、この txt を添付してください。
 
+### キーコンフィグ（PC キーの割り当て）
+
+Settings の「Key config…」で、ウィンドウが開きます。
+- 25 鍵すべて（C3〜C5）と、オクターブ下げる / 上げる、次 / 前のパッチ、全ノートオフに、好きなキーを割り当てられます。
+- 鍵盤の図（または機能の行）をクリックし、割り当てたい PC キーを押します。音の鍵は、続けて次の鍵の入力待ちになります。`Esc` で中止、`Delete` / `Backspace` でその割り当てを消します。
+- すでに別の機能に使っているキーを押すと、そのキーは新しい場所に移ります（元の割り当ては空になります）。
+- プリセット: ELITA（既定、A W S E …）/ DAW style（Z S X D C V …、Q 2 W 3 E …、オクターブは ← →）。「reset to default」で既定に戻します。
+- 使えないキー: Shift / Ctrl / Alt / Meta、Esc、Tab、Enter、Space、Backspace、Delete、F キー、ロック系。ウィンドウ操作と衝突するためです。
+- 「export .json」「import .json」で保存と共有ができます。割り当てはこのブラウザに保存されます（`localStorage`、`elita1-keys`）。どこにも送信しません。
+- 仕組み: キーは物理キー（`KeyboardEvent.code`）で識別するので、キーボード配列や日本語 IME のオン・オフに左右されません。表示のラベルは、使えるブラウザでは実際の配列の文字になります。`js/keymap.js` がデータ、`js/keyconfig.js` がウィンドウです。
+- 「Settings の reset to defaults」ではキー割り当ては戻りません。
+
 ### テーマ（配色の切り替えと編集）
 
 Patch Parameters 下部の「theme」ボタンで、配色のウィンドウが開きます。
@@ -183,6 +202,7 @@ elita1/
     ├── notes.js        ノート処理（poly / mono / legato）とアルペジエーター
     ├── debug.js        デバッグモード（コンソール用）
     ├── engine.js       音の起動、全体の更新（applyAll）、画面との接続、公開 API（最後に読み込む）
+    ├── keymap.js       PC キーの割り当てデータ（ELITA.keymap）
     ├── keys.js         鍵盤（画面 / PC キー）
     ├── patches.js      フォルダ指定とパッチ切り替え
     ├── scope.js        オシロスコープ
@@ -192,7 +212,8 @@ elita1/
     ├── log.js          セッションログの記録（txt 保存）
     ├── midi.js         MIDI 入力（Web MIDI、CC ラーン、クロック同期）
     ├── theme.js        配色テーマの切り替えと色の編集
-    └── settings.js     Settings ウィンドウ（フィルター方式、ハードシンクのアンチエイリアス、アナログ感）
+    ├── settings.js     Settings ウィンドウ（フィルター方式、ハードシンクのアンチエイリアス、アナログ感）
+    └── keyconfig.js    キーコンフィグのウィンドウ
 ```
 
 ### 仕組み

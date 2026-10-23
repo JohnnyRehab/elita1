@@ -74,9 +74,8 @@
   // single files / drops also join the list so the arrows keep working
   $('file').addEventListener('change', e => { const f = e.target.files[0]; if (f) { list = [f]; cur = 0; $('pidx').textContent = ''; } });
   addEventListener('keydown', e => {
-    if (menu || e.ctrlKey || e.metaKey || e.altKey || !list.length) return;
-    const t = e.target.tagName; if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
-    const k = {ArrowUp: 1, ArrowDown: -1}[e.key];
+    if (menu || !list.length || window.ELITA.keymap.typing(e)) return;
+    const k = {patchNext: 1, patchPrev: -1}[window.ELITA.keymap.actionOf(e.code)];     // keys: Settings > Key config (default: up arrow = next, down arrow = previous)
     if (k) { e.preventDefault(); show(cur + k); }
   });
 })();

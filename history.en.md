@@ -6,6 +6,16 @@ When the version is raised, what was done is added here (newest first).
 Claude decides when to raise the version number and asks for confirmation first. The version shown on screen is the version label and the UPDATED date in `index.html`.
 The in-app "UPDATED" window reads the Japanese `history.md`; this file is the English copy.
 
+## ver 0.5.56 — 2026.10.23
+
+- **Added Key config** ("Key config…" in Settings, `js/keymap.js` and `js/keyconfig.js`): the formerly fixed PC key assignments can now be changed. This covers all 25 keys, octave down / up, next / previous patch (↑ / ↓) and all notes off. Click a key of the diagram and press a key to assign it; for notes it moves on to the next key by itself. Esc stops, Delete / Backspace clears. Pressing a key that is in use moves it. Unusable keys (modifiers, Esc, Tab, Enter, Space, Backspace, Delete, F keys, lock keys) are rejected.
+- Two presets: ELITA (default, the same layout as before) / DAW style (Z S X D C V … and Q 2 W 3 E …, octave on ← →). Reset and export / import (.json) are included. The layout is saved in the browser (`elita1-keys`).
+- Keys are identified by `KeyboardEvent.code` (the physical key), so keyboard layout and Japanese IME state do not matter (`key=ち` with `code=KeyA` is recognised). Labels on screen use the character of the real layout where the browser supports it, otherwise they are derived from the code.
+- **Behaviour change**: while Settings, theme or Key config (any dialog) is open, PC keys no longer play notes or switch patches (before, they did).
+- Tests (Playwright): default layout unchanged / ↑ ↓ switch patches / learn mode, key stealing, Space rejected, Esc, all-notes-off assignment / kept after reload / DAW preset / export and import. No errors.
+- Limits: 25 assignable keys (same as the on-screen keyboard). Some special keys may be taken by the browser.
+- Updated the README (Japanese and English) and the screenshots. Added `docs/keyconfig.png`.
+
 ## ver 0.5.55 — 2026.10.16
 
 - **Added "Voice limits" to Settings**: ELITA (default: 5 voices, unison up to 3) / **Synth1 spec** (the ranges of the real panel: the voice count follows the patch's poly number (`#94`, 1–32) and unison goes up to 8). While Synth1 spec is on, the screen says so: a yellow "SYNTH1 SPEC MODE" badge in the title bar, "(Synth1 spec)" next to the voice counter at the keyboard, and the settings button lit yellow. The choice is saved in the browser.
