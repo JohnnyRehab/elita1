@@ -33,7 +33,7 @@ function dbgNote(kind, n) {
     const v = S.voices.filter(x => x.note === n);
     const vi = v.map(x => S.voices.indexOf(x)).join(',');
     const used = S.voices.filter(x => x.on).length;
-    console.log('%c[ELITA]%c note ON  %s (midi %d, key shift %s → %s Hz) → voice #%s  [mode: %s, active voices %d/%d]', C, '', NOTE(n), n, P[9], r3(v[0] ? v[0].freq : 0), vi, ['poly','mono','legato'][P[38]] || P[38], used, POLY);
+    console.log('%c[ELITA]%c note ON  %s (midi %d, key shift %s → %s Hz) → voice #%s  [mode: %s, active voices %d/%d]', C, '', NOTE(n), n, P[9], r3(v[0] ? v[0].freq : 0), vi, ['poly','mono','legato'][P[38]] || P[38], used, S.POLY);
     if (v[0]) console.log('%c  path%c %s', C2, '', pathString(v[0]));
   }, 0);
 }

@@ -6,6 +6,14 @@ When the version is raised, what was done is added here (newest first).
 Claude decides when to raise the version number and asks for confirmation first. The version shown on screen is the version label and the UPDATED date in `index.html`.
 The in-app "UPDATED" window reads the Japanese `history.md`; this file is the English copy.
 
+## ver 0.5.57 — 2026.10.26
+
+- **Added "Ladder bass feedback" to the Ladder** (Settings): Full (default, as before) / High-passed (150 Hz). The low end is removed from the resonance feedback (feedback = output − its one-pole lowpass), so the bass thins out less at strong resonance. The structure was taken from the filter of js303 (a TB-303 clone) as an idea; no code or coefficients were copied. The implementation keeps the delay-free (ZDF) feedback solution and uses the previous sample only for the state of the lowpass.
+  Measured (Node, ladder alone, 48 kHz): 55 Hz sine, cutoff 800 Hz, k = 3.6: gain Full −13.2 dB → High-passed −6.1 dB. No difference at k = 0 (−0.08 dB), and none at 440 Hz (−13.1 → −13.0 dB). No divergence with per-stage tanh either. **Not compared with Synth1** (resonance has not been recorded from Synth1), so whether it gets closer to the real thing is unconfirmed.
+- **Added "Cutoff curve" to Settings**: Table (default, as before) / Smooth (a monotone cubic through the measured points). The two differ by at most 0.034 octave (about 2%) over the whole range, which is hard to hear. Both pass exactly through the measured points (frq 64–112). frq 0–48 stay provisional because there are no Synth1 recordings yet.
+- **Why measurements are needed**: the Synth1 calibration patches (`calib_filter/`) are at hand, but the recorded wav files are not. Refitting the whole range with a polynomial needs recordings of frq 0 / 16 / 32 / 48 / 127 and of different resonance values.
+- Updated the README (Japanese and English).
+
 ## ver 0.5.56 — 2026.10.23
 
 - **Added Key config** ("Key config…" in Settings, `js/keymap.js` and `js/keyconfig.js`): the formerly fixed PC key assignments can now be changed. This covers all 25 keys, octave down / up, next / previous patch (↑ / ↓) and all notes off. Click a key of the diagram and press a key to assign it; for notes it moves on to the next key by itself. Esc stops, Delete / Backspace clears. Pressing a key that is in use moves it. Unusable keys (modifiers, Esc, Tab, Enter, Space, Backspace, Delete, F keys, lock keys) are rejected.
@@ -14,6 +22,7 @@ The in-app "UPDATED" window reads the Japanese `history.md`; this file is the En
 - **Behaviour change**: while Settings, theme or Key config (any dialog) is open, PC keys no longer play notes or switch patches (before, they did).
 - Tests (Playwright): default layout unchanged / ↑ ↓ switch patches / learn mode, key stealing, Space rejected, Esc, all-notes-off assignment / kept after reload / DAW preset / export and import. No errors.
 - Limits: 25 assignable keys (same as the on-screen keyboard). Some special keys may be taken by the browser.
+- Small fixes from an external review (opencode / DeepSeek): `POLY` undefined in `debug.js` (the note-on log did not appear with debug on) now `S.POLY`; losing window focus also clears the record of held keys (the next press after releasing was silent); key names like `constructor` in an imported JSON no longer misbehave; a guard in the Settings button handler. The sound is unchanged.
 - Updated the README (Japanese and English) and the screenshots. Added `docs/keyconfig.png`.
 
 ## ver 0.5.55 — 2026.10.16

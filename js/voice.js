@@ -37,7 +37,7 @@ class Voice {
     // Hard sync: worklet slave oscillator restarted by osc1 (stays null if the worklet failed to load)
     if (S.SYNC_OK) {                                  // ladder worklet (same module as the sync oscillator)
       const L = this.lad = Tone.getContext().createAudioWorkletNode('ladder', {numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2], channelCount: 2, channelCountMode: 'explicit'});
-      this.ladF = L.parameters.get('freq'); this.ladD = L.parameters.get('detune'); this.ladR = L.parameters.get('res'); this.ladS = L.parameters.get('sat'); this.ladF.value = 0; this.ladD.value = 0;
+      this.ladF = L.parameters.get('freq'); this.ladD = L.parameters.get('detune'); this.ladR = L.parameters.get('res'); this.ladS = L.parameters.get('sat'); this.ladH = L.parameters.get('fbhp'); this.ladF.value = 0; this.ladD.value = 0;
       this.ladScale = new Tone.Gain(1); this.fe.connect(this.ladScale); Tone.connect(this.ladScale, this.ladF);   // envelope output (Hz) -> ladder frequency
       Tone.connect(this.lad, this.fout);
     }
@@ -180,6 +180,7 @@ class Voice {
     const [ft, ro] = FTYPE[p[14]] || FTYPE[1];
     this.setLadder(S.FILTER === 'ladder' && !!this.lad && ft === 'lowpass' && ro === -24);
     if (this.ladS) this.ladS.value = S.LADDER_SAT === 'stage' ? 1 : 0;
+    if (this.ladH) this.ladH.value = S.LADDER_FBHP;
     if (this.useLad) { this.ladR.value = Math.min(4, LAD_K * Math.pow(p[20] / 127, 2)); this.ladScale.gain.value = cutoffLad(p[19]) / cutoff(p[19]); }   // the envelope output follows the biquad table; this ratio turns it into the ladder's fc
     this.f.type = ft; if (this.f.rolloff !== ro) this.f.rolloff = ro;
     this.f.Q.value = Math.pow(p[20] / 127, 2) * 14.5;   // dB per stage, added to the -5 dB offset set in setQOff (softer knee at res 0 like Synth1)

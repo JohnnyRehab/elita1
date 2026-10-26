@@ -1,7 +1,7 @@
 /* Settings window ("settings" button under Patch Parameters).
    Engine options that are not patch parameters. The choice is kept in this browser (localStorage); nothing is sent anywhere.
    Defaults = the sound of ver 0.5.53 (everything below is off or "standard").
-   ELITA.settings = {get(), set(key, value), reset(), items}      keys: limits / filter / ladder / syncAA / slop / drift (the "Key config…" button opens js/keyconfig.js)
+   ELITA.settings = {get(), set(key, value), reset(), items}      keys: limits / filter / ladder / ladfb / curve / syncAA / slop / drift (the "Key config…" button opens js/keyconfig.js)
    "Voice limits" = Synth1 spec lifts the ELITA limits (5 voices, unison 3) to the ranges of the real Synth1 panel (poly up to 32 = the patch's poly number, unison up to 8).
    While it is on, a badge in the title bar says so. */
 (function () {
@@ -13,6 +13,10 @@
      note: 'Biquad: the standard filter, tuned to Synth1 recordings. Ladder: experimental 4-pole 24 dB/oct (zero-delay feedback). Only Low-pass 24 dB uses the ladder; HP / BP / 12 dB stay biquad.'},
     {k: 'ladder', title: 'Ladder character', opts: [['soft', 'Soft limit'], ['stage', 'Per-stage tanh']], needs: ['filter', 'ladder'],
      note: 'Soft limit: clean linear stages, only a strong resonance is limited. Per-stage tanh: every stage saturates like a transistor ladder (warmer, resonance levels off by itself).'},
+    {k: 'ladfb', title: 'Ladder bass feedback', opts: [[0, 'Full'], [1, 'High-passed (150 Hz)']], needs: ['filter', 'ladder'],
+     note: 'Full: the resonance feedback covers all frequencies, so a strong resonance thins out the bass (a normal ladder). High-passed: the feedback loop is high-passed at about 150 Hz (as in TB-303 style filters), so the low end keeps more of its level at high resonance. Not compared with Synth1 yet.'},
+    {k: 'curve', title: 'Cutoff curve', opts: [[0, 'Table (straight lines)'], [1, 'Smooth (monotone cubic)']],
+     note: 'How the cutoff is interpolated between the measured points of the frequency knob. Both pass through the same points. Smooth removes the kinks at them; it is not more accurate until more points are measured from Synth1 (frq 0 to 48 are still provisional).'},
     {k: 'syncAA', title: 'Hard sync anti-aliasing', opts: [[0, 'Off'], [1, 'PolyBLEP']],
      note: 'Smooths the jump at each sync reset and the edges of the slave wave (PolyBLEP / PolyBLAMP). Less aliasing in the sync sweep; adds a 1-sample delay to the sync oscillator.'},
     {k: 'slop', title: 'Voice variance', opts: [[0, 'Off'], [1, 'Low'], [2, 'Medium'], [3, 'High']],
@@ -20,7 +24,7 @@
     {k: 'drift', title: 'Slow drift', opts: [[0, 'Off'], [1, 'Low'], [2, 'Medium'], [3, 'High']],
      note: 'Pitch and cutoff of each voice wander slowly and randomly (time constant about 3 s). Not repeatable from note to note.'},
   ];
-  const DEF = {limits: 'elita', filter: 'biquad', ladder: 'soft', syncAA: 0, slop: 0, drift: 0};
+  const DEF = {limits: 'elita', filter: 'biquad', ladder: 'soft', syncAA: 0, ladfb: 0, curve: 0, slop: 0, drift: 0};
   const SLOP = [0, 2, 5, 9], DRIFT = [0, 2, 4, 8];
   const ok = (k, v) => { const it = ITEMS.find(x => x.k === k); return !!it && it.opts.some(o => o[0] === v); };
   let cur = Object.assign({}, DEF);
@@ -28,7 +32,7 @@
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(cur)); } catch (e) { /* ignore */ } };
   function apply() {
     S.LIMITS = cur.limits; badge();
-    S.FILTER = cur.filter; S.LADDER_SAT = cur.ladder; S.SYNC_AA = !!cur.syncAA;
+    S.FILTER = cur.filter; S.LADDER_SAT = cur.ladder; S.SYNC_AA = !!cur.syncAA; S.LADDER_FBHP = cur.ladfb ? 150 : 0; S.CUT_SMOOTH = !!cur.curve;
     S.analog.slop = SLOP[cur.slop]; S.analog.drift = DRIFT[cur.drift];
     if (E.engine && E.engine.refresh) E.engine.refresh();
   }
@@ -84,7 +88,7 @@
   dlg.querySelector('.tb').onclick = e => {
     const b = e.target.closest('button'), box = b && b.closest('.it'); if (!b || !box) return;
     if (b.id === 'setkeys') { dlg.close(); if (E.keyconfig) E.keyconfig.open(); return; }
-    const it = ITEMS.find(x => x.k === box.dataset.k), o = it.opts.find(x => String(x[0]) === b.dataset.v); set(it.k, o[0]);
+    const it = ITEMS.find(x => x.k === box.dataset.k); if (!it) return; const o = it.opts.find(x => String(x[0]) === b.dataset.v); set(it.k, o[0]);
   };
   dlg.querySelector('#setreset').onclick = reset;
   dlg.querySelector('#setclose').onclick = () => dlg.close();

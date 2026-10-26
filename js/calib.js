@@ -30,17 +30,28 @@ const interp = (tab, v) => {
   }
   return tab[tab.length - 1][1];
 };
-const cutoff = v => interp(CUT_TAB, v);
+// Smooth variant (Settings > Cutoff curve): a monotone cubic (Fritsch-Carlson / PCHIP) through the same points in (frq, log Hz). It passes exactly through every table point
+// and has no kinks at them; between the points it follows the trend of the neighbours instead of a straight line. Not more "correct" until more points are measured.
+const pchip = (tab, v) => {
+  v = Math.max(0, Math.min(127, v)); const n = tab.length, x = tab.map(t => t[0]), y = tab.map(t => Math.log(t[1])), d = [], m = new Array(n);
+  for (let i = 0; i < n - 1; i++) d[i] = (y[i + 1] - y[i]) / (x[i + 1] - x[i]);
+  m[0] = d[0]; m[n - 1] = d[n - 2];
+  for (let i = 1; i < n - 1; i++) { if (d[i - 1] * d[i] <= 0) m[i] = 0; else { const h0 = x[i] - x[i - 1], h1 = x[i + 1] - x[i], w1 = 2 * h1 + h0, w2 = h1 + 2 * h0; m[i] = (w1 + w2) / (w1 / d[i - 1] + w2 / d[i]); } }
+  let i = 1; while (i < n - 1 && v > x[i]) i++;
+  const h = x[i] - x[i - 1], t = (v - x[i - 1]) / h, t2 = t * t, t3 = t2 * t;
+  return Math.exp((2 * t3 - 3 * t2 + 1) * y[i - 1] + (t3 - 2 * t2 + t) * h * m[i - 1] + (-2 * t3 + 3 * t2) * y[i] + (t3 - t2) * h * m[i]);
+};
+const cutoff = v => S.CUT_SMOOTH ? pchip(CUT_TAB, v) : interp(CUT_TAB, v);
 // Experimental ladder filter (S.FILTER = 'ladder'; chosen in Settings, or ELITA.engine.filterMode('ladder' | 'biquad') from the console).
 // A 4-pole ladder fitted to the same Synth1 recordings as the biquad pair (A2 / A3 / A4 harmonics, frq 64..112) leaves the same residual (about 0.5 dB rms) with ONE free parameter (fc)
 // instead of two (fc + resonance offset), so it is a simpler description of Synth1's knee.  fc (Hz) per frq: 64 -> 586, 80 -> 1454, 96 -> 3784, 112 -> 11955 (measured); 0..48 are the biquad table x 0.96 (extrapolated).
 // LAD_K: feedback at res 127 (4 = self-oscillation); res has not been measured on Synth1, so this is provisional.
 const LAD_K = 3.6;
 const CUT_TAB_LAD = [[0, 19], [16, 38], [32, 86], [48, 192], [64, 586], [80, 1454], [96, 3784], [112, 11955], [127, 30000]];
-const cutoffLad = v => interp(CUT_TAB_LAD, v);
+const cutoffLad = v => S.CUT_SMOOTH ? pchip(CUT_TAB_LAD, v) : interp(CUT_TAB_LAD, v);
 // Settings (js/settings.js writes these): FILTER 'biquad' | 'ladder'; LADDER_SAT 'soft' | 'stage'; SYNC_AA = PolyBLEP / PolyBLAMP on the hard-sync oscillator;
 // analog.slop = fixed per-voice detune (cents, max) and analog.drift = slow random pitch / cutoff wander (cents, rms-ish). All off by default = the sound of ver 0.5.53.
-Object.assign(S, {LAD_K, cutoffLad, FILTER: 'biquad', LADDER_SAT: 'soft', SYNC_AA: false, analog: {slop: 0, drift: 0}});
+Object.assign(S, {LAD_K, cutoffLad, FILTER: 'biquad', LADDER_SAT: 'soft', LADDER_FBHP: 0, CUT_SMOOTH: false, SYNC_AA: false, analog: {slop: 0, drift: 0}});
 Object.assign(S, {POLY, UNI_MAX, REFV, SYNTH1_LIM, LIMITS: 'elita', LFO_WAVE, SUBW, OSC1, OSC2, FTYPE, time, CUT_OCT, Q_OFF, cutoff});
 // shared mutable state (written by engine.js / voice.js / js/midi.js; read everywhere as S.xxx)
 Object.assign(S, {BPM: 120, BEND: 0, SYNC_OK: false, voices: null, master: null, panner: null, eq: null, toneLo: null, toneHi: null, lim: null, clip: null, wave: null,

@@ -8,7 +8,7 @@ The panel is built with NexusUI.js and the sound with Tone.js (Web Audio).
 > **This is not a reproduction of Synth1.** The internal structure (OSC → Filter → Amp, LFO, Mod Envelope, effects) follows Synth1, but the mapping from knob values to sound includes guesses, so it will not sound the same as Synth1. It is meant for hearing the general character of a patch.
 > This is an unofficial project and has no connection with the author or distributor of Synth1.
 
-Current version: **ver 0.5.56** (see [history.en.md](history.en.md) for what changed)
+Current version: **ver 0.5.57** (see [history.en.md](history.en.md) for what changed)
 
 ![ELITA-1](docs/screenshot.png)
 
@@ -236,6 +236,8 @@ ELITA.loadSy1(text)   // load .sy1 text
 - **Voice limits**: ELITA (default: 5 voices, at most 3 unison voices per oscillator, to stay light) / Synth1 spec (the ranges of the real panel: as many voices as the patch's poly number, up to 32, and up to 8 unison voices). While Synth1 spec is on, a yellow "SYNTH1 SPEC MODE" badge is shown in the title bar, "(Synth1 spec)" appears next to the voice counter at the keyboard, and the settings button is lit yellow. CPU load becomes much higher (idle voices keep running too), and the sound may crackle on a slow computer. Unison for pulse waves is still not supported in this mode.
 - **Filter engine**: Biquad (default, tuned to Synth1 recordings) / Ladder (experimental, 4-pole 24 dB/oct). Only the low-pass 24 dB type uses the ladder. The former `?filter=ladder` URL option has been removed.
 - **Ladder character**: Soft limit (default) / Per-stage tanh (tanh on every stage, transistor-ladder style).
+- **Ladder bass feedback**: Full (default) / High-passed (150 Hz). High-passes the resonance feedback at about 150 Hz so the bass thins out less at strong resonance (a structure used in TB-303-style filters). Only active with the Ladder.
+- **Cutoff curve**: Table (default, straight lines between the measured points) / Smooth (a monotone cubic through the same points). The difference is at most about 0.03 octave, hardly audible. Smooth is not more accurate until more points are measured.
 - **Hard sync anti-aliasing**: Off (default) / PolyBLEP. Reduces aliasing from the sync reset and the edges of the slave wave (measured: about 15–20 dB less aliased energy).
 - **Voice variance**: Off / Low / Medium / High. A fixed pitch and cutoff offset per voice (about 2 / 5 / 9 cents).
 - **Slow drift**: Off / Low / Medium / High. Pitch and cutoff wander slowly and randomly.

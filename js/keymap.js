@@ -18,8 +18,8 @@
   // keys that must stay free: modifiers, Esc / Tab / Enter / Space (dialogs, buttons), Backspace / Delete (clear in Key config), F keys, lock and system keys
   const RESERVED = /^(Shift|Control|Alt|Meta|OS)(Left|Right)$|^(Escape|Tab|Enter|NumpadEnter|Space|Backspace|Delete|CapsLock|ContextMenu|PrintScreen|Pause|ScrollLock|NumLock|Insert|F\d+|Unidentified|Process)$/;
   const validCode = c => typeof c === 'string' && /^[A-Za-z0-9]{1,24}$/.test(c) && !RESERVED.test(c);
-  let map = {}, rev = {}, subs = [];
-  const index = () => { rev = {}; Object.keys(map).forEach(a => { rev[map[a]] = a; }); };
+  let map = {}, rev = Object.create(null), subs = [];
+  const index = () => { rev = Object.create(null); Object.keys(map).forEach(a => { rev[map[a]] = a; }); };
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify({v: 1, map})); } catch (e) { /* no storage */ } };
   const notify = () => subs.forEach(f => { try { f(); } catch (e) { console.error(e); } });
   const clean = o => { const m = {}, seen = {}; ACTIONS.forEach(a => { const c = o && o[a]; if (validCode(c) && !seen[c]) { m[a] = c; seen[c] = 1; } }); return m; };

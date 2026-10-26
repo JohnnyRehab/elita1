@@ -8,7 +8,7 @@ Synth1 のパッチ（`.sy1`）をブラウザで試聴するための、フリ�
 > **Synth1 の再現ではありません。** 内部構成（OSC → Filter → Amp、LFO、Mod Envelope、各エフェクト）は Synth1 に合わせていますが、各つまみの値と音色の対応は推測を含み、Synth1 と同じ音にはなりません。パッチの「だいたいの傾向」を聴くためのものです。
 > 本プロジェクトは Synth1 の作者・配布元とは無関係の非公式プロジェクトです。
 
-現在のバージョン: **ver 0.5.56**（更新内容は [history.md](history.md)、英語版は [history.en.md](history.en.md)）
+現在のバージョン: **ver 0.5.57**（更新内容は [history.md](history.md)、英語版は [history.en.md](history.en.md)）
 
 ![ELITA-1](docs/screenshot.png)
 
@@ -236,6 +236,8 @@ ELITA.loadSy1(text)   // .sy1 のテキストを読み込む
 - **Voice limits**: ELITA（既定。5 ボイス、unison は 1 オシレーターあたり最大 3 本。負荷を抑えるため）/ Synth1 spec（実機の画面の範囲に合わせます。ボイス数はパッチの poly 値のとおり最大 32、unison は最大 8 本）。Synth1 spec のあいだは、タイトルバーに黄色の「SYNTH1 SPEC MODE」、鍵盤の横の表示に「(Synth1 spec)」、Settings ボタンの黄色表示が出ます。CPU 負荷がかなり大きくなり（待機中のボイスも動き続けます）、遅い PC では音が途切れることがあります。パルス波の unison は、このモードでも未対応です。
 - **Filter engine**: Biquad（既定、Synth1 の録音に合わせて調整）/ Ladder（実験、4 ポール 24 dB/oct）。ローパス 24 dB のタイプだけがラダーになります。以前の `?filter=ladder` は廃止しました。
 - **Ladder character**: Soft limit（既定）/ Per-stage tanh（各段で tanh、トランジスターラダー風）。
+- **Ladder bass feedback**: Full（既定）/ High-passed（150 Hz）。レゾナンスのフィードバックを 150 Hz 付近でハイパスし、レゾナンスを強くしたときの低域の痩せを抑えます（TB-303 系フィルターで使われる構造）。Ladder のときだけ有効。
+- **Cutoff curve**: Table（既定、実測点のあいだを直線で補間）/ Smooth（同じ点を通る単調な 3 次補間）。差は最大でも約 0.03 オクターブで、ほとんど聞き分けられません。実測点を増やすまでは、Smooth のほうが正確とは言えません。
 - **Hard sync anti-aliasing**: Off（既定）/ PolyBLEP。同期リセットとスレーブ波形のエッジの折り返しを減らします（実測で折り返し成分が約 15〜20 dB 減）。
 - **Voice variance**: Off / Low / Medium / High。ボイスごとに固定のピッチとカットオフのずれ（約 2 / 5 / 9 セント）。
 - **Slow drift**: Off / Low / Medium / High。ピッチとカットオフがゆっくりランダムに揺れます。

@@ -40,7 +40,7 @@
   });
   addEventListener('keyup', e => { if (held[e.code] != null) { off(held[e.code]); mark(held[e.code], false); delete held[e.code]; } });
   KM.on(() => { releaseAll(); relabel(); });                   // the map was changed (Key config): release held notes, update the key labels
-  addEventListener('blur', () => E.allOff());
+  addEventListener('blur', () => { E.allOff(); Object.keys(held).forEach(k => { mark(held[k], false); delete held[k]; }); });
   // first gesture anywhere starts the audio context; status text
   addEventListener('pointerdown', () => E.start(), {once: true});
   setInterval(() => { const v = E.voices(); $('vc').textContent = v ? 'voices ' + v.filter(x => x.on).length + '/' + E.POLY + (E.limits === 'synth1' ? ' (Synth1 spec)' : '') + ($('vc').dataset.v ? '  vel ' + $('vc').dataset.v : '') : 'click / press a key to start audio'; }, 150);
