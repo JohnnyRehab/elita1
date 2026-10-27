@@ -8,7 +8,7 @@ The panel is built with NexusUI.js and the sound with Tone.js (Web Audio).
 > **This is not a reproduction of Synth1.** The internal structure (OSC → Filter → Amp, LFO, Mod Envelope, effects) follows Synth1, but the mapping from knob values to sound includes guesses, so it will not sound the same as Synth1. It is meant for hearing the general character of a patch.
 > This is an unofficial project and has no connection with the author or distributor of Synth1.
 
-Current version: **ver 0.5.57** (see [history.en.md](history.en.md) for what changed)
+Current version: **ver 0.5.58** (see [history.en.md](history.en.md) for what changed)
 
 ![ELITA-1](docs/screenshot.png)
 
@@ -260,7 +260,7 @@ Line 1 is the patch name, line 2 is `color=…`, line 3 is `ver=…`, and the re
 
 ### Where the sound differs from Synth1
 
-- **Only some parameter curves have been matched by measurement.** Filter frequency (frq 64–112) comes from a table derived from Synth1 recordings (frq 0–48 are extrapolated, provisional values). ADSR times, filter envelope amount, key tracking, resonance, LFO speed, FM depth, Delay time and Chorus are still guesses. Compared with Synth1, loudness, brightness and modulation depth will be off.
+- **Only some parameter curves have been matched by measurement.** Filter frequency (frq 64–112) comes from a table derived from Synth1 recordings (frq 0–48 are extrapolated, provisional values). The decay / release times of the amp and filter envelopes are matched to Synth1 measurements (D 16–127; attack is a different curve and is still a guess). Filter envelope amount, key tracking, resonance, LFO speed, FM depth, Delay time and Chorus are still guesses. Compared with Synth1, loudness, brightness and modulation depth will be off.
 - **The low filter frequencies (frq 0–48) and the resonance are unmeasured.** Patches with a low frequency and high resonance may differ from Synth1 in loudness and brightness. `ELITA.debug.meters()` shows at which stage the level drops. The ladder (chosen in Settings) is experimental, and the average level of the 128 standard patches is about 2.7 dB lower than with the biquad.
 - The filter's `LPDL` (Synth1's own filter) is replaced by LP24.
 - LFO wave numbers (`#42` / `#47`): `1 = tri`, `2 = pulse` and `3 = s&h` were confirmed on the real Synth1. `0 = saw`, `4 = sine` and `5 = rnd` are guesses. `s&h` (stepped random values) and `rnd` (smoothly changing random values) are generated with a timer (the details differ from Synth1's behaviour).
@@ -335,7 +335,7 @@ The 128 sounds equivalent to the Synth1 factory presets (all `ver=105`, paramete
 
 ## Ideas for later
 
-- Adjust each curve by comparing with Synth1 recordings (filter low range and resonance, ADSR times, filter envelope amount, key tracking)
+- Adjust each curve by comparing with Synth1 recordings (filter low range and resonance, attack times, filter envelope amount, key tracking)
 - Switching patches with MIDI program change, MIDI output
 - Remembering the last folder
 - A spectrum display

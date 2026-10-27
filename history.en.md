@@ -6,6 +6,19 @@ When the version is raised, what was done is added here (newest first).
 Claude decides when to raise the version number and asks for confirmation first. The version shown on screen is the version label and the UPDATED date in `index.html`.
 The in-app "UPDATED" window reads the Japanese `history.md`; this file is the English copy.
 
+## ver 0.5.58 — 2026.10.27
+
+- **The decay / release times of the amp and filter envelopes now follow Synth1 measurements.** Patches with S = 0, where the decay is the sound (pianos, guitars), faded several to more than ten times faster than on the real thing (a piano with D = 102: about 7.5 s on Synth1, about 1.4 s in ELITA).
+  - Measurement (OpenCode rendered the Synth1 Audio Unit offline; saw wave, S = 0, filter fully open): the time for the level to fall 60 dB from the peak is 0.03 / 0.07 / 0.20 / 0.58 / 1.7 / 5.0 / about 16 / about 46 s for D = 16 / 32 / 48 / 64 / 80 / 96 / 112 / 127. Decay and release gave the same curve. I measured the supplied wav files again myself and confirmed the same values.
+  - Fit: `T60(v) = 0.0088 × exp(0.0665 v)` s (−15% to +8% for v = 8–127). `T60()` / `tEnv()` in `calib.js`.
+  - Tone.js's exponential envelope reaches −60 dB after `6.908 × ln(t + 1) / ln(200)` s for the time t that is set (checked by rendering). So the value of `time()` was never the real decay time, and the gap grew with D (D = 127 should have been 8 s by `time()` but was about 2.8 s). The new setting inverts this relation and passes `t = exp(T60 × 0.7669) − 1`.
+  - ELITA measured again with the same neutral patch (time to fall 60 dB, ratio to Synth1): D = 16 → 1.00, 32 → 0.86, 48 → 0.85, 64 → 0.98, 80 → 1.08, 96 → 1.03, 112 → 15.1 s (0.96), 127 → 41 s (0.90). Before (0.5.57) it was 0.04–0.18.
+  - Regression: all 128 factory patches loaded and played without errors, and all envelope times are finite. Strings (`001`, `090`) and MuteTrumpet (`060`) keep the same level over time within ±1 dB. Piano (`002`) now falls about 12 dB in 1.5 s (before: 58 dB), and Glocken (`010`) and Honky Piano (`004`) ring longer.
+  - Attack (A) is a different curve (measured: A = 64 / 80 / 96 / 112 reaches −1 dB of the peak in 0.11 / 0.43 / 1.7 / 6.9 s) and its shape is unknown, so it is unchanged. The modulation envelope (`#12` / `#13`) is also unchanged because it has not been measured.
+  - Assumptions: the filter envelope (`#16` decay, `#18` release) uses the same curve as the amp (only the amp was measured). The shape of the decay toward S > 0 (the time constant of the exponential toward S) is extrapolated from the S = 0 measurement.
+- The debug view (`ELITA.debug.graph()`) now shows the amp decay / release as the number of seconds to fall 60 dB (Tone's internal values are huge and confusing).
+- Still open: the dark Piano caused by the provisional filter frequency table (frq 0–48) is not addressed here. It needs Synth1 recordings (frq 0–48).
+
 ## ver 0.5.57 — 2026.10.26
 
 - **Added "Ladder bass feedback" to the Ladder** (Settings): Full (default, as before) / High-passed (150 Hz). The low end is removed from the resonance feedback (feedback = output − its one-pole lowpass), so the bass thins out less at strong resonance. The structure was taken from the filter of js303 (a TB-303 clone) as an idea; no code or coefficients were copied. The implementation keeps the delay-free (ZDF) feedback solution and uses the previous sample only for the state of the lowpass.

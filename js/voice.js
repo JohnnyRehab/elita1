@@ -1,7 +1,7 @@
 /* ELITA-1 voice: oscillators (+unison / sub / ring / sync / FM / noise) -> filter -> amp, plus the envelopes and LFO sends of one note. */
 (function () {
 const E = window.ELITA, P = E.params, S = (E.core = E.core || {});
-const {REFV, SUBW, OSC1, OSC2, FTYPE, time, CUT_OCT, Q_OFF, cutoff, cutoffLad, LAD_K} = S;
+const {REFV, SUBW, OSC1, OSC2, FTYPE, time, tEnv, CUT_OCT, Q_OFF, cutoff, cutoffLad, LAD_K} = S;
 const SL1 = [-0.8, 0.7, -0.45, 0.9, -1], SL2 = [0.6, -0.9, 0.75, -0.5, 0.35], SLC = [0.6, -0.4, 0.9, -0.7, 0.2];   // per-voice offsets (-1..1) for OSC1 / OSC2 pitch and the cutoff
 class Voice {
   constructor(out, lfoSrc) {
@@ -189,10 +189,10 @@ class Voice {
       this.satDry.gain.value = 1 - wet; this.satWet.gain.value = wet * 0.5; this.satPre.gain.value = (1 + sat * 14) / 8; }
     this.trackCut(p);
     this.fe.octaves = p[21] / 127 * CUT_OCT * (p[24] ? this.velF : 1);           // #21 amt is unipolar (0 = no envelope): in the 128 factory patches 91 are below 64 and 8 equal 64, so a bipolar reading would close the filter in most patches
-    this.fe.attack = time(p[15]); this.fe.decay = time(p[16]);
-    this.fe.sustain = p[17] / 127; this.fe.release = time(p[18]);
-    this.amp.attack = time(p[25]); this.amp.decay = time(p[26]);
-    this.amp.sustain = p[27] / 127; this.amp.release = time(p[28]);
+    this.fe.attack = time(p[15]); this.fe.decay = tEnv(p[16]);                       // decay / release: Synth1 measurement (calib.js tEnv); attack: time()
+    this.fe.sustain = p[17] / 127; this.fe.release = tEnv(p[18]);
+    this.amp.attack = time(p[25]); this.amp.decay = tEnv(p[26]);
+    this.amp.sustain = p[27] / 127; this.amp.release = tEnv(p[28]);
   }
   // LFO routing, FM depth and the mod envelope.  lay / pan: which extra oscillator copies exist (their detune / width inputs get the same modulation).
   applyMod(p, lay, pan) {
