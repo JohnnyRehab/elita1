@@ -8,7 +8,7 @@ The panel is built with NexusUI.js and the sound with Tone.js (Web Audio).
 > **This is not a reproduction of Synth1.** The internal structure (OSC → Filter → Amp, LFO, Mod Envelope, effects) follows Synth1, but the mapping from knob values to sound includes guesses, so it will not sound the same as Synth1. It is meant for hearing the general character of a patch.
 > This is an unofficial project and has no connection with the author or distributor of Synth1.
 
-Current version: **ver 0.5.58** (see [history.en.md](history.en.md) for what changed)
+Current version: **ver 0.5.59** (see [history.en.md](history.en.md) for what changed)
 
 ![ELITA-1](docs/screenshot.png)
 
@@ -86,6 +86,7 @@ Chrome / Edge show a folder picker; Firefox / Safari show a folder upload screen
 The `export .sy1` button in Patch Parameters (right side) saves the current state of the panel as a Synth1 `.sy1` file (it asks for a name and downloads `name.sy1`).
 
 - The format is the same as Synth1's (CRLF line endings, the same order as the factory patches). It is written as `ver=113`, #0–#98.
+- Patches of ver 105 and below (all factory patches) are converted on load to the values the real Synth1 shows after loading them (`#21`, `#37`, `#16` / `#18` / `#26` / `#28`, `#54`, `#55`; see history.en.md, 0.5.59). The export therefore matches what Synth1 saves. Versions 106–112 are not converted (unknown).
 - Items that were in a loaded patch but are not on the panel (`#40`, `#50`, `#51`, `#86`–`#89`) are written back unchanged.
 - The patch name and file name are ASCII only (Japanese and other characters become `_`), because Synth1 reads names in the OS character encoding.
 - Loading and then exporting the 128 factory patches gives identical values. However, loading an exported file into the real Synth1 has not been checked yet.

@@ -14,7 +14,7 @@
     const f = list[cur], res = E.loadSy1(await decode(f));
     $('pname').textContent = res.name;
     $('pidx').textContent = pad(cur + 1) + '/' + pad(list.length);
-    $('pinfo').textContent = f.name + '  ver ' + res.ver + ' / ' + res.applied + ' params';
+    $('pinfo').textContent = f.name + '  ver ' + res.ver + ' / ' + res.applied + ' params' + (res.converted ? ' (converted to ver 113 values)' : '');
     if (E.engine) E.engine.allOff();
   }
   function setFiles(files, label) {

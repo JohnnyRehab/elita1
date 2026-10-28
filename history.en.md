@@ -6,6 +6,20 @@ When the version is raised, what was done is added here (newest first).
 Claude decides when to raise the version number and asks for confirmation first. The version shown on screen is the version label and the UPDATED date in `index.html`.
 The in-app "UPDATED" window reads the Japanese `history.md`; this file is the English copy.
 
+## ver 0.5.59 — 2026.10.28
+
+- **Patches of ver 105 and below are now converted on load, as the real Synth1 does.** Synth1 converts some values of old patches (all 128 factory patches are ver=105) into its internal form when it loads them, and writes ver=113 when you save. ELITA-1 used the raw values, so it sounded different from the real thing (pianos, drums and so on).
+  - Measurement: I compared 6 factory patches re-saved by the real Synth1 (001 / 002 / 004 / 113 / 115 / 118) with their original values and derived the rules. With the same rules in ELITA, reloading all 6 gives the real Synth1's saved value for all 8 affected numbers (checked).
+  - `#21` filter env amount: `floor(63.5 + old / 2)` (31 -> 79, 127 -> 127). `#37` delay d/w: `floor(old / 2)`. `#16 / #18 / #26 / #28` decay / release time: interpolated through 17 measured points (102 -> 97, 64 -> 62, 19 -> 6; the ends 0 and 127 are assumed). `#55` chorus feedback: 0 -> 64. `#54` chorus rate: 64 -> 50 (one observation each for the last two).
+  - Versions 106-112 are left as they are, because it is not known whether they are converted (re-saving a 106 / 108 patch in the real Synth1 would tell). After loading, the display says "(converted to ver 113 values)".
+  - Export still writes ver=113. With the conversion in place, a .sy1 exported after loading a ver=105 patch now matches what the real Synth1 saves (before, unconverted values were labelled ver=113).
+  - Effect: the harmonic balance of the Piano (`002`) is now about 11 dB from the converted real-Synth1 AU render on average, down from about 20 dB (the AU render itself agrees with the real recording to 2-4 dB). Honky Piano (`004`) got a little worse by this measure, about 4 dB -> about 7 dB (see the open items below).
+  - Note: `#37` d/w is halved, but ELITA's d/w curve (`v / 127`) is still a guess; the delay of the factory patches now sounds at about half the former amount (the real Synth1's new d/w curve is not measured). `#54` lowers the chorus rate from about 2.1 Hz to about 1.3 Hz.
+- **The filter envelope peak is now stopped at 12.3 kHz.** Band-pass / high-pass patches with a large envelope amount (the hat `113`: BP, `#21` = 127) put the cutoff at 247 Hz x 400 = about 98 kHz, above half the sampling rate, and went silent (since 0.5.57; 113 is the only factory patch). The amount is limited so that the peak does not exceed 12.3 kHz, which is the ceiling measured on the Synth1 AU. 113 now sounds (peak 3e-6 -> 0.15). Low-pass patches whose peak was above 12.3 kHz (16 patches) lose a little of the very top.
+- Regression: all 128 factory patches loaded and played with no errors, and every envelope time is finite.
+- **What the comparison showed (no code change)**: against the converted Synth1, the provisional base-cutoff table (`#19`, frq 0-48 extrapolated) is a bigger error than the `#21` formula or the sweep shape. Reading `#21` as "64-centred +-10 oct on the converted value" is consistent, but the Piano with `#19 = 44` fits best with a base about 1.5 octaves higher. The experimental sweep switch (octave-linear) is in a separate zip (`experiment_sweep.zip`) and is not in the main tree.
+- Open: measure `#19` (frq 0-48) on the AU (`#19` = 0-80 with `#21` = 64), the shape of the filter envelope sweep (Hz-linear or octave-linear), how `#21` should be read (unipolar or bipolar), the real curves of `#37` / `#54`, and whether ver 106-112 are converted.
+
 ## ver 0.5.58 — 2026.10.27
 
 - **The decay / release times of the amp and filter envelopes now follow Synth1 measurements.** Patches with S = 0, where the decay is the sound (pianos, guitars), faded several to more than ten times faster than on the real thing (a piano with D = 102: about 7.5 s on Synth1, about 1.4 s in ELITA).

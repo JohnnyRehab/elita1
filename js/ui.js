@@ -188,16 +188,24 @@
 
   /* ---- patch loading ---- */
   E.extra = {}; E.patch = {name: 'Init patch', color: 'default'};   // extra: numbers in the file that have no control on the panel (e.g. #40, #50, #51, #86-89), kept so export can write them back
+  // Synth1 converts the values of old patches (ver 105 and below) when it loads them and writes them back as ver=113. Measured on 6 factory patches saved by the real Synth1 (36 of 36 values agree):
+  // #21 filter env amount new = floor(63.5 + old / 2); #37 delay d/w new = floor(old / 2); #16 / #18 / #26 / #28 decay / release time via the table below (17 measured points; 0 and 127 are assumed ends);
+  // #55 chorus feedback 0 -> 64; #54 chorus rate 64 -> 50 (one observation each). Versions 106-112 are not known to be converted, so they are left as they are.
+  const TPTS = [[0, 0], [19, 6], [28, 23], [32, 29], [33, 30], [34, 32], [35, 33], [47, 47], [56, 55], [64, 62], [67, 65], [76, 73], [78, 74], [80, 76], [91, 86], [92, 87], [102, 97], [105, 100], [127, 122]];
+  const tmap = v => { for (let i = 0; i < TPTS.length - 1; i++) { const [a, b] = TPTS[i], [c, d] = TPTS[i + 1]; if (v >= a && v <= c) return Math.round(b + (d - b) * (v - a) / (c - a)); } return v; };
+  const legacy = (no, v) => no === 21 ? Math.floor(63.5 + v / 2) : no === 37 ? Math.floor(v / 2) : (no === 16 || no === 18 || no === 26 || no === 28) ? tmap(v) : no === 55 ? (v === 0 ? 64 : v) : no === 54 ? (v === 64 ? 50 : v) : v;
+  E.legacyConvert = legacy;
   function loadSy1(text) {
     const L = text.replace(/\r/g, '').split('\n');
+    const ver = parseInt((L[2] || '').replace(/^ver=/, ''), 10), old = ver > 0 && ver <= 105;
     Object.keys(DEF).forEach(no => { if (no !== 'vol') set(no, DEF[no]); });   // old patches lack some numbers
     E.extra = {};
     let n = 0;
-    L.slice(3).forEach(l => { const m = l.match(/^\s*(\d+)\s*,\s*(-?\d+)\s*$/); if (!m) return; if (ctl[+m[1]]) { set(+m[1], +m[2]); n++; } else E.extra[+m[1]] = +m[2]; });
+    L.slice(3).forEach(l => { const m = l.match(/^\s*(\d+)\s*,\s*(-?\d+)\s*$/); if (!m) return; const no = +m[1], v = old ? legacy(no, +m[2]) : +m[2]; if (ctl[no]) { set(no, v); n++; } else E.extra[no] = v; });
     Object.keys(P).forEach(no => { if (E.onChange && no !== 'vol') E.onChange(+no, P[no]); });
     const cm = (L[1] || '').match(/^color=(.*)$/);
     E.patch = {name: L[0] || '(no name)', color: cm ? cm[1].trim() : 'default'};
-    return {name: E.patch.name, ver: (L[2] || '').replace(/^ver=/, ''), applied: n};
+    return {name: E.patch.name, ver: (L[2] || '').replace(/^ver=/, ''), applied: n, converted: old};
   }
   // Export the current panel as a Synth1 .sy1 text (CRLF, factory order for #0-72, then #73-98). ver=113 because #73-98 are included.
   const ORDER = [0, 45, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 71, 72, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 59, 31, 32, 33, 34, 65, 35, 36, 37, 66, 64, 52, 53, 54, 55, 56, 60, 61, 62, 63, 38, 39, 40, 50, 51, 57, 41, 42, 43, 44, 67, 68, 58, 46, 47, 48, 49, 69, 70];
@@ -213,7 +221,7 @@
     const b = await f.arrayBuffer();
     let t; try { t = new TextDecoder('utf-8', {fatal: true}).decode(b); } catch (e) { t = new TextDecoder('shift_jis').decode(b); }
     const res = loadSy1(t);
-    $('pname').textContent = res.name; $('pinfo').textContent = 'ver ' + res.ver + ' / ' + res.applied + ' params';
+    $('pname').textContent = res.name; $('pinfo').textContent = 'ver ' + res.ver + ' / ' + res.applied + ' params' + (res.converted ? ' (converted to ver 113 values)' : '');
   }
   $('file').onchange = e => { if (e.target.files[0]) readFile(e.target.files[0]); e.target.value = ''; };
   addEventListener('dragover', e => e.preventDefault());

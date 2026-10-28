@@ -1,7 +1,7 @@
 /* ELITA-1 voice: oscillators (+unison / sub / ring / sync / FM / noise) -> filter -> amp, plus the envelopes and LFO sends of one note. */
 (function () {
 const E = window.ELITA, P = E.params, S = (E.core = E.core || {});
-const {REFV, SUBW, OSC1, OSC2, FTYPE, time, tEnv, CUT_OCT, Q_OFF, cutoff, cutoffLad, LAD_K} = S;
+const {REFV, SUBW, OSC1, OSC2, FTYPE, time, tEnv, CUT_OCT, CUT_MAX, Q_OFF, cutoff, cutoffLad, LAD_K} = S;
 const SL1 = [-0.8, 0.7, -0.45, 0.9, -1], SL2 = [0.6, -0.9, 0.75, -0.5, 0.35], SLC = [0.6, -0.4, 0.9, -0.7, 0.2];   // per-voice offsets (-1..1) for OSC1 / OSC2 pitch and the cutoff
 class Voice {
   constructor(out, lfoSrc) {
@@ -13,7 +13,7 @@ class Voice {
     // Filter stage: every source feeds fin; fin goes to the biquad filter f (default) or to the experimental ladder lad (S.FILTER = 'ladder', low-pass 24 dB only); both end in fout.
     this.fin = new Tone.Gain(1); this.fout = new Tone.Gain(1); this.lad = null; this.useLad = false;
     this.fin.connect(this.f); this.f.connect(this.fout);
-    this.fe = new Tone.FrequencyEnvelope({baseFrequency:200, octaves:4});
+    this.fe = new Tone.FrequencyEnvelope({baseFrequency:200, octaves:4}); this.octReq = 4;
     this.amp = new Tone.AmplitudeEnvelope();
     this.o1.connect(this.g1); this.o2.connect(this.g2); this.nz.connect(this.gn);
     [this.g1, this.g2, this.gn].forEach(g => g.connect(this.fin));
@@ -109,7 +109,9 @@ class Voice {
     if (on) Tone.connect(this.fin, this.lad); else this.fin.connect(this.f);
   }
   setQOff() { this._qn = this.f._filters.length; this.f._filters.forEach(x => { x.Q.value = Q_OFF; }); }   // native biquad Q (dB) offset; Tone's own Q signal cannot go negative
-  trackCut(p) { this.fe.baseFrequency = Math.min(20000, cutoff(p[19]) * Math.pow(2, (this.midi - 60) / 12 * p[22] / 127)); }
+  trackCut(p) { this.fe.baseFrequency = Math.min(20000, cutoff(p[19]) * Math.pow(2, (this.midi - 60) / 12 * p[22] / 127)); this.capOct(); }
+  // The envelope peak never goes above CUT_MAX (Synth1 ceiling, about 12.3 kHz). Without it a band-pass / high-pass with a high amount (patch 113) sweeps past Nyquist and goes silent.
+  capOct() { this.fe.octaves = Math.max(0, Math.min(this.octReq, Math.log2(CUT_MAX / this.fe.baseFrequency))); }
   route(g, list, key) {           // reconnect only when the target set changed
     const cur = this[key];
     if (list.length !== cur.length || list.some((t, i) => t !== cur[i])) {
@@ -188,7 +190,7 @@ class Voice {
     { const sat = p[23] / 127, wet = Math.min(1, sat * 3);                       // 0 = bypass (exactly clean)
       this.satDry.gain.value = 1 - wet; this.satWet.gain.value = wet * 0.5; this.satPre.gain.value = (1 + sat * 14) / 8; }
     this.trackCut(p);
-    this.fe.octaves = p[21] / 127 * CUT_OCT * (p[24] ? this.velF : 1);           // #21 amt is unipolar (0 = no envelope): in the 128 factory patches 91 are below 64 and 8 equal 64, so a bipolar reading would close the filter in most patches
+    this.octReq = p[21] / 127 * CUT_OCT * (p[24] ? this.velF : 1); this.capOct();           // #21 amt is unipolar (0 = no envelope): in the 128 factory patches 91 are below 64 and 8 equal 64, so a bipolar reading would close the filter in most patches
     this.fe.attack = time(p[15]); this.fe.decay = tEnv(p[16]);                       // decay / release: Synth1 measurement (calib.js tEnv); attack: time()
     this.fe.sustain = p[17] / 127; this.fe.release = tEnv(p[18]);
     this.amp.attack = time(p[25]); this.amp.decay = tEnv(p[26]);
@@ -259,7 +261,7 @@ class Voice {
     // velocity (#30 amp sens, #24 filter switch). Relative to the reference velocity REFV (0.8 = PC keys), so a PC-key note sounds the same as before velocity existed.
     this.amp.triggerAttack(now, REFV * (1 - s * (1 - vel)) / (1 - s * (1 - REFV)));          // sens 0 = fixed level, 127 = level follows velocity
     this.velF = Math.max(0, Math.min(1.25, vel / REFV));                                   // #24 on: filter envelope amount follows velocity
-    if (P[24]) this.fe.octaves = P[21] / 127 * CUT_OCT * this.velF;
+    if (P[24]) { this.octReq = P[21] / 127 * CUT_OCT * this.velF; this.capOct(); }
     this.fe.triggerAttack(now); this.me.triggerAttack(now);
   }
   up() {
