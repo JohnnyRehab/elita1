@@ -150,7 +150,7 @@
   /* ---- Arpeggiator (one row: ON | type | range | beat | gate) ---- */
   o = sec('arpeggiator', 'arp'); r = row(o);
   sw(r, 59, 'on', 0, 'r', 'ON');
-  lamps(r, 31, [{v: 1, t: 'up'}, {v: 2, t: 'down'}, {v: 3, t: 'u/d'}, {v: 4, t: 'rnd'}], 1, '', 'type', 'type');
+  lamps(r, 31, [{v: 1, t: 'u/d'}, {v: 2, t: 'up'}, {v: 3, t: 'down'}, {v: 4, t: 'rnd'}], 1, '', 'type', 'type');
   lamps(r, 32, T(['1oct', '2oct', '3oct', '4oct']), 0, '', 'range', 'range');
   num(r, 33, 'beat', 0, 18, 11); knob(r, 34, 'gate', 64);
 
@@ -163,7 +163,7 @@
   o = sec('tempo-delay', 'delay'); r = row(o, 'split');
   c = col(r, 'sw'); sw(c, 65, 'on', 0, 'r', 'ON'); lcd(c, 82, 'type', ['ST', 'X', 'PP'], 0, {cols: 1});
   r = row(r, 'kn');
-  knob(r, 35, 'time', 8, 28); knob(r, 83, 'sprd', 0, 28); knob(r, 36, 'fdbk', 40, 28); knob(r, 98, 'tone', 0, 28); knob(r, 37, 'd/w', 20, 28);
+  knob(r, 35, 'time', 8, 28); knob(r, 83, 'sprd', 66, 28); knob(r, 36, 'fdbk', 40, 28); knob(r, 98, 'tone', 64, 28); knob(r, 37, 'd/w', 20, 28);
   o = sec('chrous-flanger', 'chorus'); r = row(o, 'split');
   c = col(r, 'sw'); sw(c, 66, 'on', 0, 'r', 'ON'); lcd(c, 64, 'type', ['x0?', 'x1', 'x2', 'x3', 'x4'], 2, {cols: 1, skip: [0]});
   r = row(r, 'kn');
@@ -194,7 +194,6 @@
   const TPTS = [[0, 0], [19, 6], [28, 23], [32, 29], [33, 30], [34, 32], [35, 33], [47, 47], [56, 55], [64, 62], [67, 65], [76, 73], [78, 74], [80, 76], [91, 86], [92, 87], [102, 97], [105, 100], [127, 122]];
   const tmap = v => { for (let i = 0; i < TPTS.length - 1; i++) { const [a, b] = TPTS[i], [c, d] = TPTS[i + 1]; if (v >= a && v <= c) return Math.round(b + (d - b) * (v - a) / (c - a)); } return v; };
   const legacy = (no, v) => no === 21 ? Math.floor(63.5 + v / 2) : no === 37 ? Math.floor(v / 2) : (no === 16 || no === 18 || no === 26 || no === 28) ? tmap(v) : no === 55 ? (v === 0 ? 64 : v) : no === 54 ? (v === 64 ? 50 : v) : v;
-  E.legacyConvert = legacy;
   function loadSy1(text) {
     const L = text.replace(/\r/g, '').split('\n');
     const ver = parseInt((L[2] || '').replace(/^ver=/, ''), 10), old = ver > 0 && ver <= 105;

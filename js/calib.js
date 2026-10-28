@@ -20,8 +20,8 @@ const time = v => 0.001 * Math.pow(8000, v / 127);   // 1 ms .. 8 s
 // Tone's exponential envelope reaches -60 dB after 6.908 * ln(t + 1) / ln(200) s for the time t that is set (checked by rendering), so t is set to exp(T60 * ln(200) / 6.908) - 1 to get the measured T60.
 const T60 = v => 0.0088 * Math.exp(0.0665 * Math.max(0, Math.min(127, v)));
 const tEnv = v => Math.exp(T60(v) * 0.7669) - 1;
-const CUT_MAX = 12300;                                  // highest cutoff the filter envelope reaches (Synth1 AU measurement: about 12.3 kHz)
-const CUT_OCT = Math.log2(400);                        // octaves covered by the frequency knob
+const CUT_MIN = 28, CUT_MAX = 12300;                                  // highest cutoff the filter envelope reaches (Synth1 AU measurement: about 12.3 kHz)
+const AMT_OCT = v => (v - 63) / (v >= 63 ? 64 : 63) * 10;   // #21 filter env amount: bipolar, 63 = none (Synth1 manual: -63..+64), about +-10 oct (Synth1 AU measurement)
 // frq (#19) -> cutoff in Hz: log-interpolated table. 64..112 measured from Synth1 recordings (2 cascaded biquad fit; REAPER + Synth1 AU, 2026.10),
 // 0..48 extrapolated from the attenuation of A2 (110 Hz) in the same recordings (provisional). frq127 is fully open.
 // Q_OFF: per-stage resonance offset in dB at res 0 (Synth1's knee is softer than a plain biquad with Q = 0 dB).
@@ -58,7 +58,7 @@ const cutoffLad = v => S.CUT_SMOOTH ? pchip(CUT_TAB_LAD, v) : interp(CUT_TAB_LAD
 // Settings (js/settings.js writes these): FILTER 'biquad' | 'ladder'; LADDER_SAT 'soft' | 'stage'; SYNC_AA = PolyBLEP / PolyBLAMP on the hard-sync oscillator;
 // analog.slop = fixed per-voice detune (cents, max) and analog.drift = slow random pitch / cutoff wander (cents, rms-ish). All off by default = the sound of ver 0.5.53.
 Object.assign(S, {LAD_K, cutoffLad, FILTER: 'biquad', LADDER_SAT: 'soft', LADDER_FBHP: 0, CUT_SMOOTH: false, SYNC_AA: false, analog: {slop: 0, drift: 0}});
-Object.assign(S, {POLY, UNI_MAX, REFV, SYNTH1_LIM, LIMITS: 'elita', LFO_WAVE, SUBW, OSC1, OSC2, FTYPE, time, CUT_OCT, CUT_MAX, Q_OFF, cutoff, T60, tEnv});
+Object.assign(S, {POLY, UNI_MAX, REFV, SYNTH1_LIM, LIMITS: 'elita', LFO_WAVE, SUBW, OSC1, OSC2, FTYPE, time, CUT_MIN, CUT_MAX, Q_OFF, cutoff, T60, tEnv, AMT_OCT});
 // shared mutable state (written by engine.js / voice.js / js/midi.js; read everywhere as S.xxx)
 Object.assign(S, {BPM: 120, BEND: 0, SYNC_OK: false, voices: null, master: null, panner: null, eq: null, toneLo: null, toneHi: null, lim: null, clip: null, wave: null,
   lfos: null, lfoOut: null, shSig: null, shTimer: [null, null], chorus: null, chorus2: null, delay: null, fx: null, scan: []});

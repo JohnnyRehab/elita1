@@ -65,11 +65,11 @@ function chainRows() {
     {stage: 'EQ (peaking)', state: Math.abs(S.eq.gain.value) > 0.01 ? 'ON' : 'flat', detail: `${Math.round(S.eq.frequency.value)}Hz, ${r3(S.eq.gain.value)}dB, Q ${r3(S.eq.Q.value)}   tone ${r3(S.toneHi.gain.value)}dB (highs) / ${r3(S.toneLo.gain.value)}dB (lows)`},
     {stage: 'Chorus 1', state: on(P[66]), detail: `wet ${w(S.chorus)}, delay ${r3(S.chorus.delayTime)}ms, depth ${r3(S.chorus.depth)}, rate ${r3(S.chorus.frequency.value)}Hz, spread ${S.chorus.spread}, type x${P[64]}`},
     {stage: 'Chorus 2 (x3/x4 only)', state: on(S.chorus2.wet.value > 0), detail: `wet ${w(S.chorus2)}`},
-    {stage: 'Delay', state: on(P[65]), detail: `type ${['ST', 'X', 'PP'][S.delay.type] || S.delay.type}, wet ${r3(S.delay.wetAmt)}, time ${r3(S.delay.time)}s (R ×${r3(S.delay.dr.delayTime.value / S.delay.dl.delayTime.value)}), feedback ${r3(S.delay.fb)}, tone LP ${Math.round(S.delay.lpL.frequency.value)}Hz`},
+    {stage: 'Delay', state: on(P[65]), detail: `type ${['ST', 'X', 'PP'][S.delay.type] || S.delay.type}, wet ${r3(S.delay.wetAmt)}, time ${r3(S.delay.time)}s (L ${Math.round(S.delay.dl.delayTime.value * 1000)} ms / R ${Math.round(S.delay.dr.delayTime.value * 1000)} ms), feedback ${r3(S.delay.fb)}, tone LP ${Math.round(S.delay.lpL.frequency.value)}Hz / HP ${Math.round(S.delay.hpL.frequency.value)}Hz`},
     {stage: 'Pan', state: Math.abs(S.panner.pan.value) > 0.01 ? 'ON' : 'center', detail: `pan ${r3(S.panner.pan.value)}`},
     {stage: 'Limiter → SoftClip(tanh)', state: 'ON', detail: 'safety'},
     {stage: 'Effect section (#77-81)', state: S.fx.on ? 'ON' : P[77] ? 'ON (deci. unavailable: AudioWorklet failed, passes through)' : 'off', detail: `type ${['a.d.1', 'a.d.2', 'd.d.', 'deci.', 'r.m.', 'comp.', 'ph.1', 'ph.2', 'ph.3', 'ph.4'][S.fx.type] || S.fx.type}, ctl1 ${P[79]}, ctl2 ${P[80]}, level ${P[81]} (placed before the EQ)`},
-    {stage: 'Arpeggiator (#59, 31-34)', state: P[59] ? 'ON' : 'off', detail: `type ${['', 'up', 'down', 'up/down', 'random'][P[31]] || P[31]}, range ${(P[32] | 0) + 1} oct, beat #${P[33]}, gate ${P[34]}`}
+    {stage: 'Arpeggiator (#59, 31-34)', state: P[59] ? 'ON' : 'off', detail: `type ${['', 'up/down', 'up', 'down', 'random'][P[31]] || P[31]}, range ${(P[32] | 0) + 1} oct, beat #${P[33]}, gate ${P[34]}`}
   ];
 }
 function voiceRows(v, i) {

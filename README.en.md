@@ -8,7 +8,7 @@ The panel is built with NexusUI.js and the sound with Tone.js (Web Audio).
 > **This is not a reproduction of Synth1.** The internal structure (OSC → Filter → Amp, LFO, Mod Envelope, effects) follows Synth1, but the mapping from knob values to sound includes guesses, so it will not sound the same as Synth1. It is meant for hearing the general character of a patch.
 > This is an unofficial project and has no connection with the author or distributor of Synth1.
 
-Current version: **ver 0.5.59** (see [history.en.md](history.en.md) for what changed)
+Current version: **ver 0.5.60** (see [history.en.md](history.en.md) for what changed)
 
 ![ELITA-1](docs/screenshot.png)
 
@@ -288,11 +288,11 @@ Line 1 is the patch name, line 2 is `color=…`, line 3 is `ver=…`, and the re
 - Phase (`#91` osc, `#92` unison): at 0 the oscillators free-run as before; otherwise OSC1/OSC2/Sub start from that angle (0–127 = 0–360 degrees) on every note-on. `#92` is added to `#91` only while unison is on (the Tone.js fat oscillator cannot offset its voices individually, so this is provisional).
 - osc `tune` (`#72`, 64 is the centre, ±100 cents, both OSCs), `det` (`#76`, 0–127 adds up to +50 cents to OSC1), and OSC2 `track` (`#4`; off fixes OSC2 at C4 regardless of the key, pitch/fine are added). The ranges are provisional.
 - LFO tempo sync (`#67` / `#69`): the speed knob selects a beat division (17 steps from 64 beats to 1/8 beat). The tempo is set in the BPM field at the bottom (default 120, 40–300) and is also used for the Delay time (in Synth1 it comes from the host). The order of the divisions is provisional.
-- Arpeggiator (`#59` on, `#31` type, `#32` oct range, `#33` beat, `#34` gate): while ON, the held keys are played in turn in time with the beat (no latch; it stops when all keys are released). The tempo is the BPM field. type is assumed to be 1 = up, 2 = down, 3 = up/down, 4 = random (1 is nearly all of the factory patches). beat has 19 steps from 0 to 18 (11 = 1/16 beat, a larger number is faster); values of 19 and above are scaled so that 127 maps to 18. The beat table is provisional. gate is the note length relative to one step (value / 127).
+- Arpeggiator (`#59` on, `#31` type, `#32` oct range, `#33` beat, `#34` gate): while ON, the held keys are played in turn in time with the beat (no latch; it stops when all keys are released). The tempo is the BPM field. type follows the Synth1 manual: 1 = up/down, 2 = up, 3 = down, 4 = random (1 is nearly all of the factory patches). beat has 19 steps from 0 to 18 (11 = 1/16 beat, a larger number is faster); values of 19 and above are scaled so that 127 maps to 18. The beat table is provisional. gate is the note length relative to one step (value / 127).
 - EQ tone (`#60`): 64 is flat; raising it makes the sound brighter (highs +, lows −) and lowering it makes it darker (up to about ±9 dB at both ends). The curve is provisional.
 - Velocity: the amp `vel` (`#30`) gives a constant level at 0 and a level proportional to the strength at 127. With the filter `vel` (`#24`) switch ON, the filter envelope amount also follows the strength. The reference strength is 0.8 (the fixed value of the PC keyboard), so a note played from the PC keys sounds the same as before velocity was implemented. On the on-screen keyboard the strength changes with the height of the click (weak at the top, strong at the bottom). The curve is provisional.
 - LFO key sync (`#68` / `#70`): resets the LFO phase on every note (s&h / rnd draw a new value).
-- Delay type / spread / tone (`#82` / `#83` / `#98`): type is assumed to be 0 = ST (independent left and right), 1 = X (feedback crosses left and right), 2 = PP (ping-pong from a mono input). spread makes the right delay time up to 1.5 times longer, and tone is a low-pass in the feedback path (0 = pass-through, 127 = about 1.5 kHz). The number mapping and the value curves are guesses.
+- Delay type / spread / tone (`#82` / `#83` / `#98`): type is assumed to be 0 = ST (independent left and right), 1 = X (feedback crosses left and right), 2 = PP (ping-pong from a mono input). spread shifts the delay time between the channels by up to ±100 ms (64 = none; above 64 the right channel is later, below 64 the left; default 66), and tone is 64 = flat, below = low-pass on the wet signal (down to about 1.5 kHz), above = high-pass (up to about 800 Hz) (default 64). The directions follow the Synth1 manual; the cutoff ranges and the spread curve are guesses.
 
 ### Value mappings not yet confirmed
 

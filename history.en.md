@@ -6,6 +6,21 @@ When the version is raised, what was done is added here (newest first).
 Claude decides when to raise the version number and asks for confirmation first. The version shown on screen is the version label and the UPDATED date in `index.html`.
 The in-app "UPDATED" window reads the Japanese `history.md`; this file is the English copy.
 
+## ver 0.5.60 — 2026.10.28
+
+The interpretation of .sy1 values was reviewed against the Synth1 v1.12 manual's parameter tables and the values of the 128 factory patches, and the mismatches found were fixed (checklist: `audit_sy1_interpretation.md`).
+
+- **The filter envelope amount (`#21`) is now bipolar (fixes a regression in 0.5.59).** In Synth1 `#21` is bipolar, with 63 as zero (manual: -63 to +64) and about +-10 oct (AU measurement). 0.5.59 added the legacy conversion (`63.5 + old / 2`) but the engine still read the value as unipolar (`v / 127 x 8.64 oct`), so the 16 patches whose old value was 0 (no envelope) opened by about 4.3 oct at the converted 63 (spectral centroid of 054 Voice 1.0 -> 4.0 kHz, 053 Choir 0.34 -> 1.0 kHz, 020 Church Organ 0.36 -> 0.76 kHz; 0.5.58 did not do this). The envelope range is kept within 28 Hz to 12.3 kHz, and negative values (the filter closing) now work.
+  - Note: patches where the error of the base cutoff table `#19` (frq 0-48 are extrapolated) was being made up by `#21` (the Piano `002` and so on) get darker for now. This is a known state until `#19` is measured (0.5.59 did not aim at that compensation; it matched by chance through conversion plus the unipolar reading).
+  - The now unused `CUT_OCT` was removed.
+- **The arpeggiator type (`#31`) follows the manual order.** 1 = up/down, 2 = up, 3 = down, 4 = random (before: 1 = up, 2 = down, 3 = up/down, two of them wrong). 6 of the 8 factory arpeggio patches (`#31` = 1) now play up/down. The order of the panel button was changed to match.
+- **The delay tone (`#98`) is bipolar with 64 = flat.** Below 64 a low-pass on the wet signal (down to about 1.5 kHz), above 64 a high-pass (up to about 800 Hz); the default is 64. Before, 64 put a low-pass at about 5.4 kHz and darkened the delay of patches saved by Synth1 as ver=113 (`#98` = 64). Factory patches have no `#98`, so they use the default 64 (flat). The cutoff ranges are provisional.
+- **The delay spread (`#83`) shifts the channels by up to +-100 ms (64 = none, default 66).** Before, 0-127 stretched the right delay by x1 to x1.5, which made the right channel about 26% longer in ver=113 patches (66). The curve is provisional.
+- **The range of the osc1,2 fine tune (`#72`) is +-62 cents** (manual: -62 to +61; before +-100 cents). All factory patches are 64, so factory sounds do not change.
+- The delay line of the debug view (`ELITA.debug.graph()`) now shows the left / right delay (ms) and the tone LP / HP.
+- Regression: all 128 factory patches loaded and played with no errors, and the conversion of the 6 patches re-saved by the real Synth1 still agrees.
+- Next (not started): stop comparing whole patches and measure one parameter at a time on the AU (`#29` gain, `#22` key track, `#19` (0-127), `#35` delay time, the LFO destinations and waveforms, the cents of `#3` / `#72` / `#76`, `#5` mix, `#45` FM, the attack curve). For `#29`, a patch with #29 = 92 is 1-3 dB quieter than the AU and a patch with #29 = 52 is 6-8 dB louder, so the curve may not be linear.
+
 ## ver 0.5.59 — 2026.10.28
 
 - **Patches of ver 105 and below are now converted on load, as the real Synth1 does.** Synth1 converts some values of old patches (all 128 factory patches are ver=105) into its internal form when it loads them, and writes ver=113 when you save. ELITA-1 used the raw values, so it sounded different from the real thing (pianos, drums and so on).
@@ -17,6 +32,7 @@ The in-app "UPDATED" window reads the Japanese `history.md`; this file is the En
   - Note: `#37` d/w is halved, but ELITA's d/w curve (`v / 127`) is still a guess; the delay of the factory patches now sounds at about half the former amount (the real Synth1's new d/w curve is not measured). `#54` lowers the chorus rate from about 2.1 Hz to about 1.3 Hz.
 - **The filter envelope peak is now stopped at 12.3 kHz.** Band-pass / high-pass patches with a large envelope amount (the hat `113`: BP, `#21` = 127) put the cutoff at 247 Hz x 400 = about 98 kHz, above half the sampling rate, and went silent (since 0.5.57; 113 is the only factory patch). The amount is limited so that the peak does not exceed 12.3 kHz, which is the ceiling measured on the Synth1 AU. 113 now sounds (peak 3e-6 -> 0.15). Low-pass patches whose peak was above 12.3 kHz (16 patches) lose a little of the very top.
 - Regression: all 128 factory patches loaded and played with no errors, and every envelope time is finite.
+- Tidy-up: the filter envelope amount calculation, which was written in two places, is now one `setAmt()`; the unused `ELITA.legacyConvert` was removed (no change in sound).
 - **What the comparison showed (no code change)**: against the converted Synth1, the provisional base-cutoff table (`#19`, frq 0-48 extrapolated) is a bigger error than the `#21` formula or the sweep shape. Reading `#21` as "64-centred +-10 oct on the converted value" is consistent, but the Piano with `#19 = 44` fits best with a base about 1.5 octaves higher. The experimental sweep switch (octave-linear) is in a separate zip (`experiment_sweep.zip`) and is not in the main tree.
 - Open: measure `#19` (frq 0-48) on the AU (`#19` = 0-80 with `#21` = 64), the shape of the filter envelope sweep (Hz-linear or octave-linear), how `#21` should be read (unipolar or bipolar), the real curves of `#37` / `#54`, and whether ver 106-112 are converted.
 

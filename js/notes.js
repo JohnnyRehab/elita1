@@ -75,8 +75,9 @@ function arpStep() {
   const l = arpList(), ty = P[31] | 0, n = l.length;
   let k;
   if (ty === 4) k = Math.floor(Math.random() * n);
-  else if (ty === 2) { arp.i = (arp.i % n + n) % n; k = n - 1 - arp.i; arp.i++; }
-  else if (ty === 3 && n > 1) { if (arp.i >= n - 1) arp.dir = -1; else if (arp.i <= 0) arp.dir = 1; arp.i = Math.max(0, Math.min(n - 1, arp.i)); k = arp.i; arp.i += arp.dir; }
+  else if (ty === 3) { arp.i = (arp.i % n + n) % n; k = n - 1 - arp.i; arp.i++; }                 // 3 = down
+  else if (ty === 1 && n > 1) {                                                                    // 1 = up/down
+    if (arp.i >= n - 1) arp.dir = -1; else if (arp.i <= 0) arp.dir = 1; arp.i = Math.max(0, Math.min(n - 1, arp.i)); k = arp.i; arp.i += arp.dir; }
   else { arp.i = arp.i % n; k = arp.i; arp.i++; }
   if (arp.cur !== null) voiceOff(arp.cur);
   arp.cur = l[k]; voiceOn(arp.cur, 0.8);

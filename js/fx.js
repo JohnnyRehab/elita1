@@ -75,33 +75,33 @@ function applyFxSection(p) {
 }
 
 // Stereo delay with 3 types (#82: 0 = ST: L/R in parallel, 1 = X: feedback crosses L<->R, 2 = PP: mono in, ping-pong) -- numbering is a guess.
-// #83 spread offsets the R delay time, #98 tone darkens the feedback path (0 = no filtering, so ver105 patches that lack it are unchanged).
+// #83 spread: +-100 ms shift between the channels (64 = none, default 66); #98 tone on the wet signal: 64 = flat, below = high-cut (low-pass), above = low-cut (high-pass), default 64 (Synth1 manual; the cutoff ranges are provisional).
 function makeDelay() {
   const G = v => new Tone.Gain(v), D = () => new Tone.Delay(0.25, 2);
   const d = {input: G(1), output: G(1), dry: G(1), wet: G(0), split: new Tone.Split(2), merge: new Tone.Merge(),
-    dl: D(), dr: D(), lpL: new Tone.Filter(20000, 'lowpass'), lpR: new Tone.Filter(20000, 'lowpass'),
+    dl: D(), dr: D(), lpL: new Tone.Filter(20000, 'lowpass'), lpR: new Tone.Filter(20000, 'lowpass'), hpL: new Tone.Filter(20, 'highpass'), hpR: new Tone.Filter(20, 'highpass'),
     iLL: G(1), iRL: G(0), iLR: G(0), iRR: G(1), fLL: G(0), fLR: G(0), fRL: G(0), fRR: G(0)};
   d.input.connect(d.dry); d.dry.connect(d.output);
   d.input.connect(d.split);
   d.split.connect(d.iLL, 0); d.split.connect(d.iLR, 0); d.split.connect(d.iRL, 1); d.split.connect(d.iRR, 1);
   d.iLL.connect(d.dl); d.iRL.connect(d.dl); d.iLR.connect(d.dr); d.iRR.connect(d.dr);
-  d.dl.connect(d.lpL); d.dr.connect(d.lpR);
-  d.lpL.connect(d.fLL); d.lpL.connect(d.fLR); d.lpR.connect(d.fRL); d.lpR.connect(d.fRR);
+  d.dl.connect(d.lpL); d.dr.connect(d.lpR); d.lpL.connect(d.hpL); d.lpR.connect(d.hpR);
+  d.hpL.connect(d.fLL); d.hpL.connect(d.fLR); d.hpR.connect(d.fRL); d.hpR.connect(d.fRR);
   d.fLL.connect(d.dl); d.fRL.connect(d.dl); d.fLR.connect(d.dr); d.fRR.connect(d.dr);   // f<from><to> naming is by output side: fLL = L->L, fLR = L->R, fRL = R->L, fRR = R->R
-  d.lpL.connect(d.merge, 0, 0); d.lpR.connect(d.merge, 0, 1);
+  d.hpL.connect(d.merge, 0, 0); d.hpR.connect(d.merge, 0, 1);
   d.merge.connect(d.wet); d.wet.connect(d.output);
   return d;
 }
 function applyDelay(p) {
   const d = S.delay, ty = p[82] | 0, fb = Math.min(0.9, p[36] / 127 * 0.9), t = Math.min(2, (p[35] + 1) * 60 / S.BPM / 16);
-  const sp = p[83] / 127;
-  d.dl.delayTime.value = t; d.dr.delayTime.value = Math.min(2, t * (1 + sp * 0.5));
+  const sh = (p[83] - 64) / 64 * 0.1;                          // seconds: > 0 delays the right channel, < 0 the left
+  d.dl.delayTime.value = Math.min(2, t + Math.max(0, -sh)); d.dr.delayTime.value = Math.min(2, t + Math.max(0, sh));
   const cross = ty === 1 || ty === 2, mono = ty === 2;
   d.iLL.gain.value = mono ? 0.5 : 1; d.iRL.gain.value = mono ? 0.5 : 0; d.iLR.gain.value = 0; d.iRR.gain.value = mono ? 0 : 1;
   d.fLL.gain.value = cross ? 0 : fb; d.fRR.gain.value = cross ? 0 : fb;
   d.fLR.gain.value = cross ? fb : 0; d.fRL.gain.value = cross ? fb : 0;
-  const hz = 20000 * Math.pow(1500 / 20000, p[98] / 127);      // tone 0 = open, 127 = ~1.5 kHz damping (provisional)
-  d.lpL.frequency.value = hz; d.lpR.frequency.value = hz;
+  const lp = p[98] < 64 ? 20000 * Math.pow(1500 / 20000, (64 - p[98]) / 64) : 20000, hp = p[98] > 64 ? 20 * Math.pow(800 / 20, (p[98] - 64) / 63) : 20;   // provisional ranges: low-pass 20 k .. 1.5 kHz, high-pass 20 .. 800 Hz
+  d.lpL.frequency.value = lp; d.lpR.frequency.value = lp; d.hpL.frequency.value = hp; d.hpR.frequency.value = hp;
   const w = p[65] ? p[37] / 127 : 0;
   d.dry.gain.value = Math.cos(w * Math.PI / 2); d.wet.gain.value = Math.sin(w * Math.PI / 2) * 1.2;
   d.wetAmt = w; d.time = t; d.fb = fb; d.type = ty;

@@ -1,7 +1,7 @@
 /* ELITA-1 voice: oscillators (+unison / sub / ring / sync / FM / noise) -> filter -> amp, plus the envelopes and LFO sends of one note. */
 (function () {
 const E = window.ELITA, P = E.params, S = (E.core = E.core || {});
-const {REFV, SUBW, OSC1, OSC2, FTYPE, time, tEnv, CUT_OCT, CUT_MAX, Q_OFF, cutoff, cutoffLad, LAD_K} = S;
+const {REFV, SUBW, OSC1, OSC2, FTYPE, time, tEnv, CUT_MIN, CUT_MAX, AMT_OCT, Q_OFF, cutoff, cutoffLad, LAD_K} = S;
 const SL1 = [-0.8, 0.7, -0.45, 0.9, -1], SL2 = [0.6, -0.9, 0.75, -0.5, 0.35], SLC = [0.6, -0.4, 0.9, -0.7, 0.2];   // per-voice offsets (-1..1) for OSC1 / OSC2 pitch and the cutoff
 class Voice {
   constructor(out, lfoSrc) {
@@ -110,8 +110,9 @@ class Voice {
   }
   setQOff() { this._qn = this.f._filters.length; this.f._filters.forEach(x => { x.Q.value = Q_OFF; }); }   // native biquad Q (dB) offset; Tone's own Q signal cannot go negative
   trackCut(p) { this.fe.baseFrequency = Math.min(20000, cutoff(p[19]) * Math.pow(2, (this.midi - 60) / 12 * p[22] / 127)); this.capOct(); }
-  // The envelope peak never goes above CUT_MAX (Synth1 ceiling, about 12.3 kHz). Without it a band-pass / high-pass with a high amount (patch 113) sweeps past Nyquist and goes silent.
-  capOct() { this.fe.octaves = Math.max(0, Math.min(this.octReq, Math.log2(CUT_MAX / this.fe.baseFrequency))); }
+  // The envelope peak stays within CUT_MIN .. CUT_MAX (Synth1 floor / ceiling, about 28 Hz / 12.3 kHz). Without the ceiling a band-pass / high-pass with a high amount (patch 113) sweeps past Nyquist and goes silent.
+  setAmt(p) { this.octReq = AMT_OCT(p[21]) * (p[24] ? this.velF : 1); this.capOct(); }   // filter env amount (#21, bipolar; with #24 on it follows the velocity)
+  capOct() { const b = this.fe.baseFrequency; this.fe.octaves = Math.max(Math.min(0, Math.log2(CUT_MIN / b)), Math.min(this.octReq, Math.max(0, Math.log2(CUT_MAX / b)))); }
   route(g, list, key) {           // reconnect only when the target set changed
     const cur = this[key];
     if (list.length !== cur.length || list.some((t, i) => t !== cur[i])) {
@@ -190,7 +191,7 @@ class Voice {
     { const sat = p[23] / 127, wet = Math.min(1, sat * 3);                       // 0 = bypass (exactly clean)
       this.satDry.gain.value = 1 - wet; this.satWet.gain.value = wet * 0.5; this.satPre.gain.value = (1 + sat * 14) / 8; }
     this.trackCut(p);
-    this.octReq = p[21] / 127 * CUT_OCT * (p[24] ? this.velF : 1); this.capOct();           // #21 amt is unipolar (0 = no envelope): in the 128 factory patches 91 are below 64 and 8 equal 64, so a bipolar reading would close the filter in most patches
+    this.setAmt(p);           // #21 amt: see AMT_OCT in calib.js
     this.fe.attack = time(p[15]); this.fe.decay = tEnv(p[16]);                       // decay / release: Synth1 measurement (calib.js tEnv); attack: time()
     this.fe.sustain = p[17] / 127; this.fe.release = tEnv(p[18]);
     this.amp.attack = time(p[25]); this.amp.decay = tEnv(p[26]);
@@ -222,7 +223,7 @@ class Voice {
     this.mg.gain.value = !on ? 0 : md === 0 ? amt * 4800 : md === 1 ? amt * 2400 : md === 2 ? amt * 0.9 : 0;
   }
   setPitch(p, glide = 0) {
-    const tune = (p[72] - 64) / 64 * 100 / 1200;                  // #72 tune: +-100 cents on both oscillators (provisional range)
+    const tune = (p[72] - 64) / 64 * 62 / 1200;                   // #72 tune: -62 .. +61 cents on both oscillators (Synth1 manual)
     const det = p[76] / 127 * 50 / 1200;                          // #76 det: 0..+50 cents added to OSC1 (provisional range)
     // #2 OSC2 pitch: 0..127 -> -60..+60 semitones (64 = centre), rounded to whole semitones. The 128 factory patches support this scale:
     // 77 -> +12, 89 -> +24, 102 -> +36 (octaves). #3 fine: 66 = no offset, 1 cent per step (66 is the factory value in 55 of 128 patches; scale provisional).
@@ -261,7 +262,7 @@ class Voice {
     // velocity (#30 amp sens, #24 filter switch). Relative to the reference velocity REFV (0.8 = PC keys), so a PC-key note sounds the same as before velocity existed.
     this.amp.triggerAttack(now, REFV * (1 - s * (1 - vel)) / (1 - s * (1 - REFV)));          // sens 0 = fixed level, 127 = level follows velocity
     this.velF = Math.max(0, Math.min(1.25, vel / REFV));                                   // #24 on: filter envelope amount follows velocity
-    if (P[24]) { this.octReq = P[21] / 127 * CUT_OCT * this.velF; this.capOct(); }
+    if (P[24]) this.setAmt(P);
     this.fe.triggerAttack(now); this.me.triggerAttack(now);
   }
   up() {
