@@ -5,15 +5,15 @@ const POLY = 5, UNI_MAX = 3, REFV = 0.8;   // ELITA limits: voices / unison voic
 // Settings > Voice limits: 'elita' (the numbers above) or 'synth1' (the ranges of the real Synth1 panel: poly 1..32, unison num 1..8). S.POLY = number of voices that exist, S.UNI_MAX = unison clamp; both are set by engine.js / settings.js.
 const SYNTH1_LIM = {poly: 32, uni: 8};
 // LFO type (#42 / #47), raw value -> shape (Synth1 AU, 2026.10.30): 0 saw down, 1 triangle, 2 pulse/square,
-// 3 S&H, 4 saw up, 5 sine.  The e5_type CSV is labelled by the requested norm band, not by the raw value
+// 3 S&H, 4 smoothed random, 5 sine (4 was taken for saw up in 0.5.61; the manual and OpenSynth1 both list a smoothed random there).  The e5_type CSV is labelled by the requested norm band, not by the raw value
 // (requested 2 -> raw 5 = sine, 3 -> raw 2 = pulse, 4 -> raw 3 = S&H, 5 -> raw 4 = saw up).
-// Only 3 is a random value (stepped timer, see applyFx); 0 is a rising saw inverted at the send.
-const LFO_WAVE = ['sawtooth','triangle','square',null,'sawtooth','sine'];
+// 3 and 4 are random values (timer, see applyFx); 0 is a rising saw inverted at the send.
+const LFO_WAVE = ['sawtooth','triangle','square',null,null,'sine'];
 // Shared wave values (differs from the GUI display order). Confirmed on Synth1:
 // osc1 3 = tri; osc2 1 = saw, 2 = pulse, 4 = noise. 0 = sine follows by elimination (osc1 has 4 shapes).
 const SUBW = ['sine', 'triangle', 'sawtooth', 'square'];   // #96: 0 sine / 1 triangle (confirmed) / 2 saw / 3 square (the last two follow the Synth1 manual order, unverified)
 const OSC1 = ['sine','sawtooth','pulse','triangle'];
-const OSC2 = ['sine','sawtooth','pulse','triangle','noise'];
+const OSC2 = [null,'sawtooth','pulse','triangle','noise'];   // 0 = none (silent, as in OpenSynth1); the manual lists tri / saw / square / noise only
 const FTYPE = [['lowpass',-12],['lowpass',-24],['highpass',-12],['bandpass',-12],['lowpass',-24]];
 // ---- Curves tuned against Synth1 recordings (see history.md). Anything marked provisional is still to be measured. ----
 const time = v => 0.001 * Math.pow(8000, v / 127);   // 1 ms .. 8 s

@@ -18,13 +18,17 @@ The results of the single-parameter Synth1 AU measurement (OpenCode, `measure_ki
 - **`#35` delay time**: a 20-step note-value table (0.1 .. 2000 ms at 120 BPM). Tempo sync is not verified.
 - **`#83` spread**: the sides were swapped (0 delays the right channel, 127 the left). 64 is zero, +-100 ms on an exponential curve.
 - **LFO** (from OpenCode's re-check `VERIFY_v0.5.60b`; the earlier "destination / wave lists disagree" was a mix-up between the test-case state numbers and the real values):
-  - Wave numbers: `0 = saw down`, `1 = tri`, `2 = pulse`, `3 = s&h`, `4 = saw up`, `5 = sine`. There is no smooth `rnd`. `0` inverts the send to get a falling saw.
+  - Wave numbers: `0 = saw down`, `1 = tri`, `2 = pulse`, `3 = s&h`, `4 = rnd (smoothed random)`, `5 = sine`. The AU measurement read 4 as a rising saw, but both the Synth1 manual and OpenSynth1 list a smoothed random there, so that is used (0, 1 and 5 agree in all three). `0` inverts the send to get a falling saw. A bug where key sync added random values to sine and other waves is fixed too.
   - Speed (`#43` / `#48`, free run): the measured table, 0.29 .. 94.7 Hz (it was 0.1 .. 20 Hz, about 5 times too slow at the fast end).
   - Pitch depth (`#44` / `#49`): the measured table (8 -> 132, 64 -> 1869, 127 -> 6860 cents p-p).
   - Destination 7 (pan) is now implemented (a Panner per voice; depth `#44 / 100` is provisional).
 - **`#98` tone**: 1-pole LP / HP (`Tone.OnePoleFilter`) with the measured 3 dB points (LP 0 -> 186 Hz .. 48 -> 5.9 kHz, HP 80 -> 40 Hz .. 127 -> 6.6 kHz).
 - **Bug fix (same version):** `Tone.OnePoleFilter`, used for the `#98` 1-pole filters, is unstable above fs / pi (about 14 kHz at 44.1 kHz); with the delay ON the output turned into NaN and went silent. Replaced it with a bilinear one-pole filter.
 - **Bug fix (same version):** the LFO pitch depth table (`#44` / `#49`) was log-interpolated, which gives NaN for depths 0..7. In 63 factory patches that use an LFO (Piano, Hit, the guitars, basses, strings...) only the first voice got the patch and the other voices kept the previous one (only the first key press sounded right). It is linear now, and one failing voice can no longer leave the others on the old patch. Checked on all 128 factory patches: every voice has the same settings.
+- **Fixes from checking against the Synth1 manual (Robert Heaton) and OpenSynth1:**
+  - In legato, the mod envelope retriggers on every key press (the other envelopes keep running as before).
+  - The sub oscillator follows unison, FM, detune and tune (it used to follow only OSC1's pitch).
+  - OSC2 wave `0` is silent, as in OpenSynth1 (shown as "(none)"). The real Synth1's behaviour there is not verified.
 - **Ladder table** is back to the directly fitted measurements (no biquad ratio scaling needed).
 - Not yet applied / verified: LFO filter / p/w / FM depth (the filter's +-4800 cents is suspected to be too deep), tempo sync for LFO and delay, `#19` frq 0..16, `#24` velocity tracking, res / LP12 / HP / BP dependence, LFO key sync, and the 128-patch comparison (including the +3.3 dB `#29` and +4.0 dB `#30` headroom change).
 - Check: ELITA's `#19` / `#22` / `#29` measured the same way as the AU: cutoff within 2 % (`#22` within 7 %), gain within 0.1 dB. The 128 factory patches have not been compared again yet.

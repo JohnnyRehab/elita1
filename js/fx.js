@@ -136,13 +136,13 @@ function applyFx(p) {
   [[42, 43], [47, 48]].forEach(([t, sp], k) => {
     const sync = p[[67, 69][k]];                                // tempo sync: the speed knob picks a beat division instead of a rate
     const hz = sync ? 1 / (LFO_BEATS[Math.round(p[sp] / 127 * 16)] * 60 / S.BPM) : lfoSpd(p[sp]);   // free: 0.29 .. 94.7 Hz (measured)
-    const ty = p[t], rnd = ty === 3;                            // 3 = S&H only; 4 = saw up, 5 = sine
+    const ty = p[t], rnd = ty === 3 || ty === 4;                // 3 = S&H, 4 = smoothed random, 5 = sine
     S.lfos[k].frequency.value = hz;
-    if (rnd) {                                              // 3 = S&H (stepped random value)
+    if (rnd) {                                              // 3 = S&H (stepped), 4 = smoothed random (glides to each new value)
       if (S.lfos[k].state === 'started') S.lfos[k].stop();
       if (S.shTimer[k] === null || S.shTimer[k].hz !== hz || S.shTimer[k].ty !== ty) {
         if (S.shTimer[k]) clearInterval(S.shTimer[k].id);
-        const f = () => { S.shSig[k].value = Math.random() * 2 - 1; };
+        const f = () => { const v = Math.random() * 2 - 1; if (ty === 4) S.shSig[k].rampTo(v, 1 / hz); else S.shSig[k].value = v; };
         f(); S.shTimer[k] = {hz, ty, id: setInterval(f, 1000 / hz)};
       }
     } else {

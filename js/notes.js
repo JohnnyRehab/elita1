@@ -16,7 +16,7 @@ function keySync() {
   [68, 70].forEach((no, k) => {
     if (!P[no] || !P[[57, 58][k]]) return;
     const ty = P[[42, 47][k]];
-    if (ty === 3 || ty === 5) { S.shSig[k].value = Math.random() * 2 - 1; return; }
+    if (ty === 3 || ty === 4) { S.shSig[k].value = Math.random() * 2 - 1; return; }
     if (S.lfos[k].state === 'started') { const t = Tone.now(); S.lfos[k].stop(t); S.lfos[k].start(t + 0.001); }
   });
 }

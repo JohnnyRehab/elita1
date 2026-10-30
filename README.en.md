@@ -264,7 +264,7 @@ Line 1 is the patch name, line 2 is `color=…`, line 3 is `ver=…`, and the re
 - **Only some parameter curves have been matched by measurement.** Filter frequency (frq 64–112) comes from a table derived from Synth1 recordings (frq 0–48 are extrapolated, provisional values). The decay / release times of the amp and filter envelopes are matched to Synth1 measurements (D 16–127; attack is a different curve and is still a guess). Filter envelope amount, key tracking, resonance, LFO speed, FM depth, Delay time and Chorus are still guesses. Compared with Synth1, loudness, brightness and modulation depth will be off.
 - **The low filter frequencies (frq 0–48) and the resonance are unmeasured.** Patches with a low frequency and high resonance may differ from Synth1 in loudness and brightness. `ELITA.debug.meters()` shows at which stage the level drops. The ladder (chosen in Settings) is experimental, and the average level of the 128 standard patches is about 2.7 dB lower than with the biquad.
 - The filter's `LPDL` (Synth1's own filter) is replaced by LP24.
-- LFO wave numbers (`#42` / `#47`): measured on the Synth1 AU as `0 = saw down`, `1 = tri`, `2 = pulse`, `3 = s&h`, `4 = saw up`, `5 = sine` (also matches the real-Synth1 observations Telephone = 2 and Computer = 3). Only `s&h` (stepped random values) is a timer-generated random value (details differ from the real Synth1).
+- LFO wave numbers (`#42` / `#47`): `0 = saw down`, `1 = tri`, `2 = pulse`, `3 = s&h`, `4 = rnd` (smoothed random), `5 = sine`. 0, 1 and 5 agree in the Synth1 AU measurement, the Synth1 manual and OpenSynth1; `2` (Telephone) and `3` (Computer) also match real-Synth1 observations. `4` follows the manual and OpenSynth1 (the AU measurement read it as a rising saw; not settled). `s&h` and `rnd` are timer-generated random values (details differ from the real Synth1).
 - The filter `sat` (`#23`) is an approximation: a tanh saturator in parallel right after the filter (0 is a complete bypass). The distortion character differs from Synth1's.
 - A simple soft clip is applied to the output (to stop level jumps when the resonance is high).
 
@@ -305,7 +305,7 @@ Wave number mapping (◎ = confirmed on the real Synth1 display, ○ = supported
 | OSC1 (`#0`) | sine ○ | saw ○ | pulse ◎ | tri ◎ | – | – |
 | OSC2 (`#1`) | (not on the real panel; not in the 128 patches) | saw ◎ | pulse ◎ | tri ◎ | noise ◎ | – |
 | Sub (`#96`) | sine △ | tri ◎ | saw △ | pulse △ | – | – |
-| LFO (`#42` / `#47`) | saw down ◎ | tri ◎ | pulse ◎ | s&h ◎ | saw up ◎ | sine ◎ |
+| LFO (`#42` / `#47`) | saw down ◎ | tri ◎ | pulse ◎ | s&h ◎ | rnd △ | sine ◎ |
 
 - The OSC2 panel has no sine (it has the four: tri / pulse / saw / noise). With `#1 = 0` the engine plays a sine.
 - OSC1 `0` and `1` have not been seen lit on the real panel, but how the 128 patches use them supports the mapping. `0` gathers Piano, Bell, Flute, Whistle and Kick; `1` gathers Strings, Brass, Saw lead and Sync lead; `2` is Hammond / Church / Perc Organ, Clarinet and Square lead (sounds that suit pulse); `3` is Celesta, Glocken, Piccolo, Pan Flute and Telephone (sounds that suit tri). For OSC2 too, `4` is concentrated in hat, snare, Kick2, Wind, Machine Gun and Explosion (sounds that suit noise).

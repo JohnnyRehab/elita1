@@ -45,7 +45,7 @@ class Voice {
     this.sy = null; this.sg2 = new Tone.Gain(0); this.sg2.connect(this.fin);
     if (S.SYNC_OK) { this.sy = Tone.getContext().createAudioWorkletNode('sync-osc', {numberOfInputs: 0, outputChannelCount: [1]}); Tone.connect(this.sy, this.sg2); }
     // FM: osc2 acts as the modulator of osc1 pitch (cents)
-    this.fm = new Tone.Gain(0); this.o2.connect(this.fm); this.fm.connect(this.o1.detune);
+    this.fm = new Tone.Gain(0); this.o2.connect(this.fm); this.fm.connect(this.o1.detune); this.fm.connect(this.so.detune);   // the sub oscillator follows FM too
     // Mod envelope: attack -> decay to 0, ignores note-off
     this.me = new Tone.Envelope({attack: 0.001, decay: 0.1, sustain: 0, release: 0.01});
     this.mg = new Tone.Gain(0); this.me.connect(this.mg); this.mt = [];
@@ -162,7 +162,8 @@ class Voice {
     const m = p[5] / 127 * Math.PI / 2;
     const un = 1 / Math.sqrt(uni) * (lay ? Math.SQRT1_2 : 1) * (pan ? Math.SQRT1_2 : 1);                    // keep level steady with more unison voices
     this.g1.gain.value = Math.cos(m) * 0.5 * un;
-    const ring = p[7] && !noise, sync = p[6] && this.sy && !ring && !noise, s2 = Math.sin(m) * 0.5 * un;
+    const none = p[1] === 0;                                                  // OSC2 wave 0: not a Synth1 wave; OpenSynth1 outputs silence there, so OSC2 is muted (also as ring / sync / FM source)
+    const ring = p[7] && !noise && !none, sync = p[6] && this.sy && !ring && !noise && !none, s2 = none ? 0 : Math.sin(m) * 0.5 * un;
     this.g2.gain.value = noise || ring || sync ? 0 : s2;
     this.gr.gain.value = ring ? s2 * un : 0;
     this.sg2.gain.value = sync ? s2 : 0;
@@ -175,7 +176,7 @@ class Voice {
     if (lay) { this.gu1.gain.value = this.g1.gain.value; this.gu2.gain.value = this.g2.gain.value; }
     this.gn.gain.value = noise ? Math.sin(m) * 0.5 : 0;
     // Sub oscillator (wave values follow OSC1; assumed, unverified). Pulse is a fixed square.
-    this.setType(this.so, SUBW[p[96]] || 'sine');          // sub wave numbering differs from OSC1 (1 = triangle confirmed on Synth1 with the Piano patch)
+    shape(this.so, SUBW[p[96]] || 'sine');   // the sub follows unison (fat copies) as OSC1 does.  Sub wave numbering differs from OSC1 (1 = triangle confirmed on Synth1 with the Piano patch)
     this.sg.gain.value = p[95] / 127 * 0.5 * Math.cos(m);       // scales with the OSC1 side of the mix
     return {lay, pan};
   }
@@ -216,7 +217,7 @@ class Voice {
     });
     this.vg.gain.value = 1 - trem;
     // FM depth (provisional curve) and mod envelope routing
-    this.fm.gain.value = Math.pow(p[45] / 127, 2) * 4800;
+    this.fm.gain.value = p[1] === 0 ? 0 : Math.pow(p[45] / 127, 2) * 4800;
     const on = p[10], amt = (p[11] - 64) / 64, md = p[71];       // amount: 64 = 0
     this.me.attack = time(p[12]); this.me.decay = time(p[13]);
     const mt = !on ? [] : md === 0 ? [this.o2.detune] : md === 1 ? [this.fm.gain] : md === 2 ? [...pw(this.o1), ...pw(this.o2)] : [];
@@ -236,7 +237,7 @@ class Voice {
     const f2 = base2 * bk * Math.pow(2, st / 12 + tune);
     const set = (sig, f) => glide > 0 ? sig.rampTo(f, glide) : (sig.value = f);
     set(this.o1.frequency, f1);
-    set(this.so.frequency, this.freq * bk * (p[97] ? 0.5 : 1));
+    set(this.so.frequency, f1 * (p[97] ? 0.5 : 1));   // the sub follows OSC1: tune, detune (and FM / unison, see applyOsc)
     set(this.o2.frequency, f2);
     if (this.rOn) { set(this.r1.frequency, f1); set(this.r2.frequency, f2); }
     if (this.uOn) { const k = Math.pow(2, (p[85] - 24) / 12); set(this.u1.frequency, f1 * k); set(this.u2.frequency, f2 * k); }
@@ -250,7 +251,7 @@ class Voice {
     this.midi = note + P[9]; this.note = note; this.on = true; this.t = performance.now();
     this.freq = Tone.Frequency(note + P[9], 'midi').toFrequency();
     this.setPitch(P, glide); this.trackCut(P);
-    if (!retrig) return;
+    if (!retrig) { this.me.triggerAttack(Tone.now()); return; }   // legato: the mod envelope retriggers on every key press (Synth1 manual); the others keep running
     const now = Tone.now(), s = P[30] / 127;
     // phase (#91 osc, #92 unison): oscillators free-run by default; with a nonzero phase they restart at that angle on every note-on.
     // #91 -> OSC1/OSC2/Sub (0..127 = 0..360 deg); #92 is added on top only while unison is on (a fat oscillator cannot offset its voices separately, so this is provisional)
