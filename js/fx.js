@@ -76,11 +76,21 @@ function applyFxSection(p) {
 
 // Stereo delay with 3 types (#82: 0 = ST: L/R in parallel, 1 = X: feedback crosses L<->R, 2 = PP: mono in, ping-pong) -- numbering is a guess.
 // #83 spread: +-100 ms shift between the channels (64 = none, default 66); #98 tone on the wet signal: 64 = flat, below = high-cut (low-pass), above = low-cut (high-pass), default 64 (Synth1 manual; the cutoff ranges are provisional).
+// 1-pole filter for the delay tone (#98). Tone.OnePoleFilter uses coefficients that are unstable above about fs / pi (14 kHz at 44.1 kHz): with the 20 kHz "flat" setting the IIR
+// blows up, the delay feedback fills with NaN and the whole output goes silent. This subclass builds the same node with a bilinear (always stable) one-pole instead.
+class OnePole extends Tone.OnePoleFilter {
+  _createFilter() {
+    const old = this._filter, fs = this.context.sampleRate, K = Math.tan(Math.PI * Math.min(this.toFrequency(this._frequency), 0.45 * fs) / fs), a1 = (K - 1) / (1 + K);
+    this._filter = this._type === 'lowpass' ? this.context.createIIRFilter([K / (1 + K), K / (1 + K)], [1, a1]) : this.context.createIIRFilter([1 / (1 + K), -1 / (1 + K)], [1, a1]);
+    this.input.chain(this._filter, this.output);
+    if (old) this.context.setTimeout(() => { if (!this.disposed) { this.input.disconnect(old); old.disconnect(); } }, this.blockTime);
+  }
+}
 function makeDelay() {
   const G = v => new Tone.Gain(v), D = () => new Tone.Delay(0.25, 2);
   const d = {input: G(1), output: G(1), dry: G(1), wet: G(0), split: new Tone.Split(2), merge: new Tone.Merge(),
-    dl: D(), dr: D(), lpL: new Tone.OnePoleFilter({type: 'lowpass', frequency: 20000}), lpR: new Tone.OnePoleFilter({type: 'lowpass', frequency: 20000}),
-    hpL: new Tone.OnePoleFilter({type: 'highpass', frequency: 20}), hpR: new Tone.OnePoleFilter({type: 'highpass', frequency: 20}),
+    dl: D(), dr: D(), lpL: new OnePole({type: 'lowpass', frequency: 20000}), lpR: new OnePole({type: 'lowpass', frequency: 20000}),
+    hpL: new OnePole({type: 'highpass', frequency: 20}), hpR: new OnePole({type: 'highpass', frequency: 20}),
     iLL: G(1), iRL: G(0), iLR: G(0), iRR: G(1), fLL: G(0), fLR: G(0), fRL: G(0), fRR: G(0)};
   d.input.connect(d.dry); d.dry.connect(d.output);
   d.input.connect(d.split);

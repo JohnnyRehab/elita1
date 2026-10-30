@@ -23,6 +23,7 @@ The results of the single-parameter Synth1 AU measurement (OpenCode, `measure_ki
   - Pitch depth (`#44` / `#49`): the measured table (8 -> 132, 64 -> 1869, 127 -> 6860 cents p-p).
   - Destination 7 (pan) is now implemented (a Panner per voice; depth `#44 / 100` is provisional).
 - **`#98` tone**: 1-pole LP / HP (`Tone.OnePoleFilter`) with the measured 3 dB points (LP 0 -> 186 Hz .. 48 -> 5.9 kHz, HP 80 -> 40 Hz .. 127 -> 6.6 kHz).
+- **Bug fix (same version):** `Tone.OnePoleFilter`, used for the `#98` 1-pole filters, is unstable above fs / pi (about 14 kHz at 44.1 kHz); with the delay ON the output turned into NaN and went silent. Replaced it with a bilinear one-pole filter.
 - **Ladder table** is back to the directly fitted measurements (no biquad ratio scaling needed).
 - Not yet applied / verified: LFO filter / p/w / FM depth (the filter's +-4800 cents is suspected to be too deep), tempo sync for LFO and delay, `#19` frq 0..16, `#24` velocity tracking, res / LP12 / HP / BP dependence, LFO key sync, and the 128-patch comparison (including the +3.3 dB `#29` and +4.0 dB `#30` headroom change).
 - Check: ELITA's `#19` / `#22` / `#29` measured the same way as the AU: cutoff within 2 % (`#22` within 7 %), gain within 0.1 dB. The 128 factory patches have not been compared again yet.
