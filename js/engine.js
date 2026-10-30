@@ -51,7 +51,7 @@ function applyAll() {
   S.dbgParams();
   if (P[38] !== prevMode) { prevMode = P[38]; allOff(); }
   if (!!P[59] !== prevArp) { prevArp = !!P[59]; arp.held.length = 0; arpStop(); allOff(); }   // switching the arpeggiator releases held notes   // release everything when the play mode changes
-  S.applyFx(P); S.voices.forEach(v => v.apply(P));
+  S.applyFx(P); S.voices.forEach(v => { try { v.apply(P); } catch (e) { console.error('voice apply failed', e); } });   // one failing voice must not leave the others on the old patch
 }
 
 // ---- hook up to the panel ----

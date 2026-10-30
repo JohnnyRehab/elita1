@@ -55,7 +55,9 @@ const cutoff = v => S.CUT_SMOOTH ? pchip(CUT_TAB, v) : interp(CUT_TAB, v);
 const LFO_SPD = [[0, 0.29], [16, 0.29], [32, 0.5], [48, 1.32], [64, 3.32], [80, 8.35], [96, 20.98], [112, 52.75], [127, 94.72]];
 // LFO pitch depth (#44 / #49) in cents peak-to-peak, measured on the osc2 pitch destination.
 const LFO_PITCH = [[0, 0], [8, 132], [16, 279], [32, 666], [64, 1869], [100, 4392], [127, 6860]];
-const lfoSpd = v => interp(LFO_SPD, v), lfoPitch = v => interp(LFO_PITCH, v);
+const lin = (tab, v) => { v = Math.max(0, Math.min(127, v)); for (let i = 1; i < tab.length; i++) if (v <= tab[i][0]) { const a = tab[i - 1], b = tab[i]; return a[1] + (b[1] - a[1]) * (v - a[0]) / (b[0] - a[0]); } return tab[tab.length - 1][1]; };
+// lfoPitch is linear between the points: it starts at 0 cents, and the log interpolation of interp() gives NaN there (0 * Infinity), which broke every patch with an LFO pitch depth below 8.
+const lfoSpd = v => interp(LFO_SPD, v), lfoPitch = v => lin(LFO_PITCH, v);
 // Experimental ladder filter (S.FILTER = 'ladder'; chosen in Settings, or ELITA.engine.filterMode('ladder' | 'biquad') from the console).
 // A 4-pole ladder fitted to the same Synth1 recordings as the biquad pair (A2 / A3 / A4 harmonics, frq 64..112) leaves the same residual (about 0.5 dB rms) with ONE free parameter (fc)
 // instead of two (fc + resonance offset), so it is a simpler description of Synth1's knee.  fc (Hz) per frq: 64 -> 586, 80 -> 1454, 96 -> 3784, 112 -> 11955 (measured; not ratio-scaled).
