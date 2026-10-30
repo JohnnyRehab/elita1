@@ -1,7 +1,7 @@
 /* ELITA-1 voice: oscillators (+unison / sub / ring / sync / FM / noise) -> filter -> amp, plus the envelopes and LFO sends of one note. */
 (function () {
 const E = window.ELITA, P = E.params, S = (E.core = E.core || {});
-const {REFV, SUBW, OSC1, OSC2, FTYPE, time, tEnv, CUT_MIN, CUT_MAX, AMT_OCT, Q_OFF, cutoff, cutoffLad, LAD_K} = S;
+const {REFV, SUBW, OSC1, OSC2, FTYPE, time, tEnv, CUT_MIN, CUT_MAX, AMT_OCT, Q_OFF, cutoff, cutoffLad, LAD_K, KT_BASE, KT_SLOPE, VEL_DB} = S;
 const SL1 = [-0.8, 0.7, -0.45, 0.9, -1], SL2 = [0.6, -0.9, 0.75, -0.5, 0.35], SLC = [0.6, -0.4, 0.9, -0.7, 0.2];   // per-voice offsets (-1..1) for OSC1 / OSC2 pitch and the cutoff
 class Voice {
   constructor(out, lfoSrc) {
@@ -109,7 +109,7 @@ class Voice {
     if (on) Tone.connect(this.fin, this.lad); else this.fin.connect(this.f);
   }
   setQOff() { this._qn = this.f._filters.length; this.f._filters.forEach(x => { x.Q.value = Q_OFF; }); }   // native biquad Q (dB) offset; Tone's own Q signal cannot go negative
-  trackCut(p) { this.fe.baseFrequency = Math.min(20000, cutoff(p[19]) * Math.pow(2, (this.midi - 60) / 12 * p[22] / 127)); this.capOct(); }
+  trackCut(p) { const dn = this.midi - KT_BASE; this.fe.baseFrequency = Math.min(20000, cutoff(p[19]) * Math.pow(2, dn / 12 * KT_SLOPE(p[22], dn > 0))); this.capOct(); }   // pivot C3, slope compressed above it (Synth1 AU measurement)
   // The envelope peak stays within CUT_MIN .. CUT_MAX (Synth1 floor / ceiling, about 28 Hz / 12.3 kHz). Without the ceiling a band-pass / high-pass with a high amount (patch 113) sweeps past Nyquist and goes silent.
   setAmt(p) { this.octReq = AMT_OCT(p[21]) * (p[24] ? this.velF : 1); this.capOct(); }   // filter env amount (#21, bipolar; with #24 on it follows the velocity)
   capOct() { const b = this.fe.baseFrequency; this.fe.octaves = Math.max(Math.min(0, Math.log2(CUT_MIN / b)), Math.min(this.octReq, Math.max(0, Math.log2(CUT_MAX / b)))); }
@@ -260,7 +260,7 @@ class Voice {
       this.phased = ph > 0;
     }
     // velocity (#30 amp sens, #24 filter switch). Relative to the reference velocity REFV (0.8 = PC keys), so a PC-key note sounds the same as before velocity existed.
-    this.amp.triggerAttack(now, REFV * (1 - s * (1 - vel)) / (1 - s * (1 - REFV)));          // sens 0 = fixed level, 127 = level follows velocity
+    this.amp.triggerAttack(now, REFV * Math.pow(10, VEL_DB * s * (vel - REFV) / 20));   // level in dB = -(1 - vel) * s * 29.5 (Synth1 AU measurement); sens 0 = fixed level
     this.velF = Math.max(0, Math.min(1.25, vel / REFV));                                   // #24 on: filter envelope amount follows velocity
     if (P[24]) this.setAmt(P);
     this.fe.triggerAttack(now); this.me.triggerAttack(now);

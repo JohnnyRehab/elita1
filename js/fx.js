@@ -92,9 +92,11 @@ function makeDelay() {
   d.merge.connect(d.wet); d.wet.connect(d.output);
   return d;
 }
+// #35 delay time (0..19) in beats, from the Synth1 AU measurement at 120 BPM: 0.1 / 20.8 / 41.7 / 62.5 / 83.3 / 125 / 166.7 / 187.5 / 250 / 333.3 / 375 / 437.5 / 500 / 666.7 / 750 / 875 / 1000 / 1500 / 1750 / 2000 ms (tempo sync not verified)
+const DELAY_BEATS = [0.0002, 1 / 24, 1 / 12, 0.125, 1 / 6, 0.25, 1 / 3, 0.375, 0.5, 2 / 3, 0.75, 0.875, 1, 4 / 3, 1.5, 1.75, 2, 3, 3.5, 4];
 function applyDelay(p) {
-  const d = S.delay, ty = p[82] | 0, fb = Math.min(0.9, p[36] / 127 * 0.9), t = Math.min(2, (p[35] + 1) * 60 / S.BPM / 16);
-  const sh = (p[83] - 64) / 64 * 0.1;                          // seconds: > 0 delays the right channel, < 0 the left
+  const d = S.delay, ty = p[82] | 0, fb = Math.min(0.9, p[36] / 127 * 0.9), t = Math.min(2, DELAY_BEATS[Math.max(0, Math.min(19, p[35] | 0))] * 60 / S.BPM);
+  const x = Math.min(1, Math.abs(p[83] - 64) / 63), sh = Math.sign(p[83] - 64) * -0.1 * (Math.exp(6.58 * x) - 1) / (Math.exp(6.58) - 1);   // seconds: < 0 (spread above 64) delays the left channel, > 0 (below 64) the right (Synth1 AU: 0 -> R +100 ms, 127 -> L +100 ms, 2 ms-ish steps near 64, exponential)
   d.dl.delayTime.value = Math.min(2, t + Math.max(0, -sh)); d.dr.delayTime.value = Math.min(2, t + Math.max(0, sh));
   const cross = ty === 1 || ty === 2, mono = ty === 2;
   d.iLL.gain.value = mono ? 0.5 : 1; d.iRL.gain.value = mono ? 0.5 : 0; d.iLR.gain.value = 0; d.iRR.gain.value = mono ? 0 : 1;
@@ -108,7 +110,7 @@ function applyDelay(p) {
 }
 // Provisional curves for the shared blocks (LFO speed, delay, chorus)
 function applyFx(p) {
-  S.master.gain.rampTo(p[29] / 127 * Math.pow(p.vol / 127, 2) * 0.9, 0.02);
+  S.master.gain.rampTo(S.gainCurve(p[29]) * Math.pow(p.vol / 127, 2) * 0.9, 0.02);
   S.eq.frequency.value = 100 * Math.pow(100, p[61] / 127);          // 100 Hz .. 10 kHz (provisional)
   S.eq.gain.value = (p[62] - 64) / 64 * 12; S.eq.Q.value = 0.3 + p[63] / 127 * 6;
   const tn = (p[60] - 64) / 64 * 9;                                 // #60 tone: 64 = flat, up = brighter (highs +, lows -), down = darker; max about ±9 dB each side (provisional)

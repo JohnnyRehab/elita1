@@ -21,12 +21,13 @@ const time = v => 0.001 * Math.pow(8000, v / 127);   // 1 ms .. 8 s
 const T60 = v => 0.0088 * Math.exp(0.0665 * Math.max(0, Math.min(127, v)));
 const tEnv = v => Math.exp(T60(v) * 0.7669) - 1;
 const CUT_MIN = 28, CUT_MAX = 12300;                                  // highest cutoff the filter envelope reaches (Synth1 AU measurement: about 12.3 kHz)
-const AMT_OCT = v => (v - 63) / (v >= 63 ? 64 : 63) * 10;   // #21 filter env amount: bipolar, 63 = none (Synth1 manual: -63..+64), about +-10 oct (Synth1 AU measurement)
-// frq (#19) -> cutoff in Hz: log-interpolated table. 64..112 measured from Synth1 recordings (2 cascaded biquad fit; REAPER + Synth1 AU, 2026.10),
-// 0..48 extrapolated from the attenuation of A2 (110 Hz) in the same recordings (provisional). frq127 is fully open.
+const AMT_OCT = v => (v - 64) * 0.1495;   // #21 filter env amount: bipolar, zero at 64, 0.1495 oct per step (Synth1 AU measurement 2026.10.29: 63 / 64 / 65 = 649 / 716 / 799 Hz, 64 -> 72 = +1.20 oct)
+// frq (#19) -> cutoff in Hz: log-interpolated table. Re-calibrated 2026.10.30 against the Synth1 AU measurement (E1, saw A2 / A3, fit_cutoff.py): the table was iterated until ELITA's own render,
+// run through the same harmonic fit, gives the same fc as the AU (32..112 within 3 %). 0..24 are provisional (ELITA's output there is below the leak floor, the fit is not usable; set to about 0.67 x the AU fit).
+// The AU ceiling is about 12.3 kHz (white noise at frq 127); 120 / 127 are above it on purpose (ELITA's fit reads low near the top), the envelope ceiling is CUT_MAX.
 // Q_OFF: per-stage resonance offset in dB at res 0 (Synth1's knee is softer than a plain biquad with Q = 0 dB).
 const Q_OFF = -5;
-const CUT_TAB = [[0, 20], [16, 40], [32, 90], [48, 200], [64, 610], [80, 1360], [96, 3450], [112, 10000], [127, 20000]];
+const CUT_TAB = [[0, 41], [8, 59], [16, 70], [24, 78], [32, 120], [40, 186], [48, 285], [56, 444], [64, 689], [72, 1074], [80, 1694], [88, 2699], [96, 4205], [104, 6629], [112, 10111], [120, 14504], [127, 14504]];
 // log-interpolation through a [frq, Hz] table (shared by the biquad and ladder curves)
 const interp = (tab, v) => {
   v = Math.max(0, Math.min(127, v));
@@ -50,15 +51,25 @@ const pchip = (tab, v) => {
 const cutoff = v => S.CUT_SMOOTH ? pchip(CUT_TAB, v) : interp(CUT_TAB, v);
 // Experimental ladder filter (S.FILTER = 'ladder'; chosen in Settings, or ELITA.engine.filterMode('ladder' | 'biquad') from the console).
 // A 4-pole ladder fitted to the same Synth1 recordings as the biquad pair (A2 / A3 / A4 harmonics, frq 64..112) leaves the same residual (about 0.5 dB rms) with ONE free parameter (fc)
-// instead of two (fc + resonance offset), so it is a simpler description of Synth1's knee.  fc (Hz) per frq: 64 -> 586, 80 -> 1454, 96 -> 3784, 112 -> 11955 (measured); 0..48 are the biquad table x 0.96 (extrapolated).
+// instead of two (fc + resonance offset), so it is a simpler description of Synth1's knee.  fc (Hz) per frq: 64 -> 586, 80 -> 1454, 96 -> 3784, 112 -> 11955 (measured); (the table above, ratio-scaled to the new biquad table).
 // LAD_K: feedback at res 127 (4 = self-oscillation); res has not been measured on Synth1, so this is provisional.
+// #22 key track (Synth1 AU measurement, saw at 6 notes): the pivot note is C3 (48), not C4. Slope in oct per oct, below / above the pivot:
+// #22 = 127 / 96 / 64 / 32 -> 0.99 / 0.81 / 0.63 / 0.40 below and 0.90 / 0.72 / 0.51 / 0.26 above (notes 72 / 84 were not measurable). Fit: (v/127)^0.66 and 0.9 (v/127)^0.85.
+const KT_BASE = 48, KT_SLOPE = (v, above) => v <= 0 ? 0 : above ? 0.9 * Math.pow(v / 127, 0.85) : Math.pow(v / 127, 0.66);
+// #29 gain (Synth1 AU measurement: level in dB relative to 127, rms of a held saw): piecewise linear in dB; below 8 it fades to silence. Normalised so that 92 keeps the level it had with the old linear curve.
+const GAIN_DB = [[8, -37.34], [16, -30.66], [24, -26.06], [32, -22.43], [40, -19.4], [48, -16.77], [56, -14.43], [64, -12.31], [72, -10.37], [80, -8.58], [88, -6.91], [96, -5.34], [104, -3.86], [112, -2.45], [120, -1.12], [127, 0]];
+const gainDb = v => { v = Math.max(0, Math.min(127, v)); if (v < 8) return -37.34; for (let i = 1; i < GAIN_DB.length; i++) if (v <= GAIN_DB[i][0]) { const a = GAIN_DB[i - 1], b = GAIN_DB[i]; return a[1] + (b[1] - a[1]) * (v - a[0]) / (b[0] - a[0]); } return 0; };
+const GAIN_REF = Math.pow(10, gainDb(92) / 20) / (92 / 127);
+const gainCurve = v => v <= 0 ? 0 : (v < 8 ? v / 8 : 1) * Math.pow(10, gainDb(v) / 20) / GAIN_REF;
+// #30 velocity sensitivity: level in dB = -(1 - vel) * (sens / 127) * 29.5 (Synth1 AU measurement, vel 32 / 64 / 100 at sens 127 and 64; sens 0 = constant)
+const VEL_DB = 29.5;
 const LAD_K = 3.6;
-const CUT_TAB_LAD = [[0, 19], [16, 38], [32, 86], [48, 192], [64, 586], [80, 1454], [96, 3784], [112, 11955], [127, 30000]];
+const CUT_TAB_LAD = [[0, 39], [8, 56], [16, 66], [24, 74], [32, 115], [40, 178], [48, 274], [56, 426], [64, 662], [72, 1088], [80, 1811], [88, 2923], [96, 4612], [104, 7591], [112, 12088], [120, 19570], [127, 21756]];
 const cutoffLad = v => S.CUT_SMOOTH ? pchip(CUT_TAB_LAD, v) : interp(CUT_TAB_LAD, v);
 // Settings (js/settings.js writes these): FILTER 'biquad' | 'ladder'; LADDER_SAT 'soft' | 'stage'; SYNC_AA = PolyBLEP / PolyBLAMP on the hard-sync oscillator;
 // analog.slop = fixed per-voice detune (cents, max) and analog.drift = slow random pitch / cutoff wander (cents, rms-ish). All off by default = the sound of ver 0.5.53.
 Object.assign(S, {LAD_K, cutoffLad, FILTER: 'biquad', LADDER_SAT: 'soft', LADDER_FBHP: 0, CUT_SMOOTH: false, SYNC_AA: false, analog: {slop: 0, drift: 0}});
-Object.assign(S, {POLY, UNI_MAX, REFV, SYNTH1_LIM, LIMITS: 'elita', LFO_WAVE, SUBW, OSC1, OSC2, FTYPE, time, CUT_MIN, CUT_MAX, Q_OFF, cutoff, T60, tEnv, AMT_OCT});
+Object.assign(S, {POLY, UNI_MAX, REFV, SYNTH1_LIM, LIMITS: 'elita', LFO_WAVE, SUBW, OSC1, OSC2, FTYPE, time, CUT_MIN, CUT_MAX, Q_OFF, cutoff, T60, tEnv, AMT_OCT, KT_BASE, KT_SLOPE, gainCurve, VEL_DB});
 // shared mutable state (written by engine.js / voice.js / js/midi.js; read everywhere as S.xxx)
 Object.assign(S, {BPM: 120, BEND: 0, SYNC_OK: false, voices: null, master: null, panner: null, eq: null, toneLo: null, toneHi: null, lim: null, clip: null, wave: null,
   lfos: null, lfoOut: null, shSig: null, shTimer: [null, null], chorus: null, chorus2: null, delay: null, fx: null, scan: []});

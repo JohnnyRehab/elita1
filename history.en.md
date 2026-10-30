@@ -6,6 +6,20 @@ When the version is raised, what was done is added here (newest first).
 Claude decides when to raise the version number and asks for confirmation first. The version shown on screen is the version label and the UPDATED date in `index.html`.
 The in-app "UPDATED" window reads the Japanese `history.md`; this file is the English copy.
 
+## ver 0.5.60 (addendum) — 2026.10.30
+
+No version bump. The results of the single-parameter Synth1 AU measurement (OpenCode, `measure_kit`) are now in the numbers. ELITA's own output is run through the same fit script (`fit_cutoff.py`) and matched to the AU values.
+
+- **`#19` cutoff table**: now 17 points in steps of 8 (frq 32..112 within 3 % of the AU). frq 0..24 cannot be estimated on the ELITA side, so those are provisional. The ceiling (`CUT_MAX`, 12.3 kHz) is unchanged, as measured. The ladder table was scaled by the same ratios.
+- **`#21` zero point is 64, 0.1495 oct per step** (0.5.60 had 63 / about 0.156 oct). The `#19` table had been tuned about +0.156 oct too bright to compensate, so both were fixed together.
+- **`#22` key track**: pivot note is C3 (C4 was wrong). Slope at #22 = 127 is 0.99 below / 0.90 above the pivot (oct per oct), compressed for smaller values (below (v/127)^0.66, above 0.9 (v/127)^0.85).
+- **`#29` gain**: no longer linear; the AU dB table (127 = 0 dB, 64 = -12.3 dB, 32 = -22.4 dB). The level at 92 is as before.
+- **`#30` velocity**: dB = -(1 - vel) x (sens / 127) x 29.5.
+- **`#35` delay time**: a 20-step note-value table (0.1 .. 2000 ms at 120 BPM). Tempo sync is not verified.
+- **`#83` spread**: the sides were swapped (0 delays the right channel, 127 the left). 64 is zero, +-100 ms on an exponential curve.
+- Not applied: `#98` tone (the AU uses a 1st-order LP / HP; ELITA's filters are 2nd order, so the filter has to be rebuilt) and the LFO destination / waveform lists (the AU's internal value boundaries are uneven and disagree with the real UI order).
+- Check: ELITA's `#19` / `#22` / `#29` measured the same way as the AU: cutoff within 2 % (`#22` within 7 %), gain within 0.1 dB. The 128 factory patches have not been compared again yet.
+
 ## ver 0.5.60 — 2026.10.28
 
 The interpretation of .sy1 values was reviewed against the Synth1 v1.12 manual's parameter tables and the values of the 128 factory patches, and the mismatches found were fixed (checklist: `audit_sy1_interpretation.md`).
