@@ -4,7 +4,7 @@
   const E = window.ELITA, $ = id => document.getElementById(id), box = $('plist');
   const onoff = ['off', 'on'];
   const W1 = {0: 'sine', 1: 'saw', 2: 'pulse', 3: 'tri'}, W2 = {0: 'sine?', 1: 'saw', 2: 'pulse', 3: 'tri', 4: 'noise'};
-  const LD = ['none', 'osc2', 'osc1,2', 'filter', 'amp', 'p/w', 'FM', 'pan'], LT = ['saw', 'tri', 'pulse', 's&h', 'sine', 'rnd'];
+  const LD = ['none', 'osc2', 'osc1,2', 'filter', 'amp', 'p/w', 'FM', 'pan'], LT = ['saw↓', 'tri', 'pulse', 's&h', 'saw↑', 'sine'];
   const FT = ['LP12', 'LP24', 'HP12', 'BP12', 'LPDL'], FX = ['a.d.1', 'a.d.2', 'd.d.', 'deci.', 'r.m.', 'comp.', 'ph.1', 'ph.2', 'ph.3', 'ph.4'];
   const T = a => v => a[v];
   // [no, label, decoder?]   section → optional sub-groups

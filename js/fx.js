@@ -1,7 +1,7 @@
 /* ELITA-1 effects: effect section (distortion / deci. / r.m. / comp. / phaser), stereo delay, chorus, EQ, tone, LFO speed. */
 (function () {
 const E = window.ELITA, S = (E.core = E.core || {});
-const {LFO_WAVE} = S;
+const {LFO_WAVE, lfoSpd, interp} = S;
 const LFO_BEATS = [64, 32, 16, 8, 4, 3, 2, 1.5, 1.3333, 1, 0.75, 0.6667, 0.5, 0.375, 0.3333, 0.25, 0.125];   // tempo-sync divisions (beats per LFO cycle), slow -> fast; provisional
 // Effect section (#77-81): 0 a.d.1 / 1 a.d.2 / 2 d.d. / 3 deci. / 4 r.m. / 5 comp. / 6-9 ph.1-4 (numbering follows the panel order, a guess).
 // Distortions: ctl1 = drive, ctl2 = low-pass cutoff, level = dry/wet balance. Other types: see applyFxSection. All curves and ranges are provisional.
@@ -79,7 +79,8 @@ function applyFxSection(p) {
 function makeDelay() {
   const G = v => new Tone.Gain(v), D = () => new Tone.Delay(0.25, 2);
   const d = {input: G(1), output: G(1), dry: G(1), wet: G(0), split: new Tone.Split(2), merge: new Tone.Merge(),
-    dl: D(), dr: D(), lpL: new Tone.Filter(20000, 'lowpass'), lpR: new Tone.Filter(20000, 'lowpass'), hpL: new Tone.Filter(20, 'highpass'), hpR: new Tone.Filter(20, 'highpass'),
+    dl: D(), dr: D(), lpL: new Tone.OnePoleFilter({type: 'lowpass', frequency: 20000}), lpR: new Tone.OnePoleFilter({type: 'lowpass', frequency: 20000}),
+    hpL: new Tone.OnePoleFilter({type: 'highpass', frequency: 20}), hpR: new Tone.OnePoleFilter({type: 'highpass', frequency: 20}),
     iLL: G(1), iRL: G(0), iLR: G(0), iRR: G(1), fLL: G(0), fLR: G(0), fRL: G(0), fRR: G(0)};
   d.input.connect(d.dry); d.dry.connect(d.output);
   d.input.connect(d.split);
@@ -94,6 +95,10 @@ function makeDelay() {
 }
 // #35 delay time (0..19) in beats, from the Synth1 AU measurement at 120 BPM: 0.1 / 20.8 / 41.7 / 62.5 / 83.3 / 125 / 166.7 / 187.5 / 250 / 333.3 / 375 / 437.5 / 500 / 666.7 / 750 / 875 / 1000 / 1500 / 1750 / 2000 ms (tempo sync not verified)
 const DELAY_BEATS = [0.0002, 1 / 24, 1 / 12, 0.125, 1 / 6, 0.25, 1 / 3, 0.375, 0.5, 2 / 3, 0.75, 0.875, 1, 4 / 3, 1.5, 1.75, 2, 3, 3.5, 4];
+// #98 tone, 1-pole 3 dB points (Synth1 AU, 2026.10.29): low-pass 0 -> 186, 16 -> 583, 32 -> 1950, 48 -> 5910 Hz;
+// high-pass 80 -> ~40, 96 -> 236, 112 -> 1425, 127 -> 6562 Hz; 64 = flat.
+const DELAY_LP = [[0, 186], [16, 583], [32, 1950], [48, 5910], [64, 20000]];
+const DELAY_HP = [[64, 20], [80, 40], [96, 236], [112, 1425], [127, 6562]];
 function applyDelay(p) {
   const d = S.delay, ty = p[82] | 0, fb = Math.min(0.9, p[36] / 127 * 0.9), t = Math.min(2, DELAY_BEATS[Math.max(0, Math.min(19, p[35] | 0))] * 60 / S.BPM);
   const x = Math.min(1, Math.abs(p[83] - 64) / 63), sh = Math.sign(p[83] - 64) * -0.1 * (Math.exp(6.58 * x) - 1) / (Math.exp(6.58) - 1);   // seconds: < 0 (spread above 64) delays the left channel, > 0 (below 64) the right (Synth1 AU: 0 -> R +100 ms, 127 -> L +100 ms, 2 ms-ish steps near 64, exponential)
@@ -102,8 +107,9 @@ function applyDelay(p) {
   d.iLL.gain.value = mono ? 0.5 : 1; d.iRL.gain.value = mono ? 0.5 : 0; d.iLR.gain.value = 0; d.iRR.gain.value = mono ? 0 : 1;
   d.fLL.gain.value = cross ? 0 : fb; d.fRR.gain.value = cross ? 0 : fb;
   d.fLR.gain.value = cross ? fb : 0; d.fRL.gain.value = cross ? fb : 0;
-  const lp = p[98] < 64 ? 20000 * Math.pow(1500 / 20000, (64 - p[98]) / 64) : 20000, hp = p[98] > 64 ? 20 * Math.pow(800 / 20, (p[98] - 64) / 63) : 20;   // provisional ranges: low-pass 20 k .. 1.5 kHz, high-pass 20 .. 800 Hz
-  d.lpL.frequency.value = lp; d.lpR.frequency.value = lp; d.hpL.frequency.value = hp; d.hpR.frequency.value = hp;
+  const lp = p[98] < 64 ? interp(DELAY_LP, p[98]) : 20000, hp = p[98] > 64 ? interp(DELAY_HP, p[98]) : 20;
+  if (d.lpL.frequency !== lp) { d.lpL.frequency = lp; d.lpR.frequency = lp; }   // OnePoleFilter rebuilds its IIR on assignment: only when changed
+  if (d.hpL.frequency !== hp) { d.hpL.frequency = hp; d.hpR.frequency = hp; }
   const w = p[65] ? p[37] / 127 : 0;
   d.dry.gain.value = Math.cos(w * Math.PI / 2); d.wet.gain.value = Math.sin(w * Math.PI / 2) * 1.2;
   d.wetAmt = w; d.time = t; d.fb = fb; d.type = ty;
@@ -119,14 +125,14 @@ function applyFx(p) {
   S.panner.pan.value = Math.max(-1, Math.min(1, (p[90] - 64) / 63));
   [[42, 43], [47, 48]].forEach(([t, sp], k) => {
     const sync = p[[67, 69][k]];                                // tempo sync: the speed knob picks a beat division instead of a rate
-    const hz = sync ? 1 / (LFO_BEATS[Math.round(p[sp] / 127 * 16)] * 60 / S.BPM) : 0.1 * Math.pow(200, p[sp] / 127);   // free: 0.1 .. 20 Hz
-    const ty = p[t], rnd = ty === 3 || ty === 5;
+    const hz = sync ? 1 / (LFO_BEATS[Math.round(p[sp] / 127 * 16)] * 60 / S.BPM) : lfoSpd(p[sp]);   // free: 0.29 .. 94.7 Hz (measured)
+    const ty = p[t], rnd = ty === 3;                            // 3 = S&H only; 4 = saw up, 5 = sine
     S.lfos[k].frequency.value = hz;
-    if (rnd) {                                              // 3 = S&H (stepped), 5 = smooth random (glides to each new value)
+    if (rnd) {                                              // 3 = S&H (stepped random value)
       if (S.lfos[k].state === 'started') S.lfos[k].stop();
       if (S.shTimer[k] === null || S.shTimer[k].hz !== hz || S.shTimer[k].ty !== ty) {
         if (S.shTimer[k]) clearInterval(S.shTimer[k].id);
-        const f = () => { const v = Math.random() * 2 - 1; if (ty === 5) S.shSig[k].rampTo(v, 1 / hz); else S.shSig[k].value = v; };
+        const f = () => { S.shSig[k].value = Math.random() * 2 - 1; };
         f(); S.shTimer[k] = {hz, ty, id: setInterval(f, 1000 / hz)};
       }
     } else {

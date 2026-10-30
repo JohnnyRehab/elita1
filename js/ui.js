@@ -121,7 +121,7 @@
   /* ---- LFO 1 | shared destination names | LFO 2 ---- */
   o = sec('lfo', 'lfo'); g = h('div', 'lfo7', o);
   const LD = ['osc2', 'osc1,2', 'filter', 'amp', 'p/w', 'FM', 'pan'];
-  const LT = [{img: 'saw'}, {img: 'triangle'}, {img: 'square'}, 's&h', {img: 'sin'}, 'rnd'];   // 1 = triangle, 2 = pulse, 3 = s&h confirmed on Synth1
+  const LT = ['saw↓', {img: 'triangle'}, {img: 'square'}, 's&h', 'saw↑', {img: 'sin'}];   // raw 0..5 = saw down / tri / pulse / s&h / saw up / sine (measured)
   const l1 = h('div', 'lb', g), mid = h('div', 'lc', g), l2 = h('div', 'lb rr', g);
   [[l1, 1, 57, 42, 41, 43, 44, 67, 68, 2], [l2, 2, 58, 47, 46, 48, 49, 69, 70, 3]].forEach(([b, n, on, ty, ds, sp, am, ts, ks, dd]) => {
     sect = 'lfo' + n;

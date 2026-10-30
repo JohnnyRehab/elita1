@@ -1,7 +1,7 @@
 /* ELITA-1 voice: oscillators (+unison / sub / ring / sync / FM / noise) -> filter -> amp, plus the envelopes and LFO sends of one note. */
 (function () {
 const E = window.ELITA, P = E.params, S = (E.core = E.core || {});
-const {REFV, SUBW, OSC1, OSC2, FTYPE, time, tEnv, CUT_MIN, CUT_MAX, AMT_OCT, Q_OFF, cutoff, cutoffLad, LAD_K, KT_BASE, KT_SLOPE, VEL_DB} = S;
+const {REFV, SUBW, OSC1, OSC2, FTYPE, time, tEnv, CUT_MIN, CUT_MAX, AMT_OCT, Q_OFF, cutoff, cutoffLad, LAD_K, KT_BASE, KT_SLOPE, VEL_DB, lfoPitch} = S;
 const SL1 = [-0.8, 0.7, -0.45, 0.9, -1], SL2 = [0.6, -0.9, 0.75, -0.5, 0.35], SLC = [0.6, -0.4, 0.9, -0.7, 0.2];   // per-voice offsets (-1..1) for OSC1 / OSC2 pitch and the cutoff
 class Voice {
   constructor(out, lfoSrc) {
@@ -19,12 +19,13 @@ class Voice {
     [this.g1, this.g2, this.gn].forEach(g => g.connect(this.fin));
     this.fe.connect(this.f.frequency);
     this.vg = new Tone.Gain(1);                      // tremolo stage (LFO -> amp)
+    this.pn = new Tone.Panner(0);                    // per-voice pan (LFO dest 7)
     // Filter saturation (#23): parallel tanh shaper after the filter, crossfaded with the clean signal
     this.satDry = new Tone.Gain(1); this.satPre = new Tone.Gain(1 / 8); this.satWet = new Tone.Gain(0);
     this.satShaper = new Tone.WaveShaper(x => Math.tanh(8 * x), 2048);          // input is pre-scaled by drive/8, so the output is tanh(drive * x)
     this.fout.connect(this.satDry); this.satDry.connect(this.amp);
     this.fout.connect(this.satPre); this.satPre.connect(this.satShaper); this.satShaper.connect(this.satWet); this.satWet.connect(this.amp);
-    this.amp.connect(this.vg); this.vg.connect(out);
+    this.amp.connect(this.vg); this.vg.connect(this.pn); this.pn.connect(out);
     this.sd = lfoSrc.map(l => { const g = new Tone.Gain(0); l.connect(g); return g; });   // LFO depth sends
     this.lfoSrc = lfoSrc;
     this.dst = [[], []];
@@ -202,15 +203,15 @@ class Voice {
     // LFO routing (shared LFOs; on/dest/depth param numbers)
     let trem = 0;
     const pw = o => o.type === 'pulse' ? [o.width] : [];   // pulse-width signal is recreated when the type changes
-    [[57, 41, 44], [58, 46, 49]].forEach(([on, ds, dp], k) => {
-      const dest = p[on] ? p[ds] : -1, d = p[dp] / 127;
+    [[57, 41, 44, 42], [58, 46, 49, 47]].forEach(([on, ds, dp, ty], k) => {
+      const dest = p[on] ? p[ds] : -1, d = p[dp] / 127, sgn = p[ty] === 0 ? -1 : 1;   // raw 0 = saw down: invert the send
       const tg = {1: [this.o2.detune, ...(lay ? [this.u2.detune] : []), ...(pan ? [this.r2.detune] : [])], 2: [this.o1.detune, this.o2.detune, this.so.detune, ...(lay ? [this.u1.detune, this.u2.detune] : []), ...(pan ? [this.r1.detune, this.r2.detune] : [])], 3: [this.f.detune, ...(this.ladD ? [this.ladD] : [])], 4: [this.vg.gain],
-                  5: [...pw(this.o1), ...pw(this.o2)], 6: [this.fm.gain]}[dest] || [];
+                  5: [...pw(this.o1), ...pw(this.o2)], 6: [this.fm.gain], 7: [this.pn.pan]}[dest] || [];
       if (tg.length !== this.dst[k].length || tg.some((t, i) => t !== this.dst[k][i])) {
         this.sd[k].disconnect(); tg.forEach(t => this.sd[k].connect(t)); this.dst[k] = tg;
       }
-      this.sd[k].gain.value = dest < 1 ? 0 : dest <= 2 ? d * 1200 : dest === 3 ? d * 4800
-                            : dest === 4 ? d / 2 : dest === 5 ? d * 0.9 : dest === 6 ? d * 2400 : 0;   // cents / cents / gain / width / fm cents
+      this.sd[k].gain.value = sgn * (dest < 1 ? 0 : dest <= 2 ? lfoPitch(p[dp]) / 2 : dest === 3 ? d * 4800
+                            : dest === 4 ? d / 2 : dest === 5 ? d * 0.9 : dest === 6 ? d * 2400 : dest === 7 ? Math.min(1, p[dp] / 100) : 0);   // cents / cents / gain / width / fm cents / pan
       if (dest === 4) trem += d / 2;
     });
     this.vg.gain.value = 1 - trem;

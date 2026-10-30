@@ -6,9 +6,9 @@ When the version is raised, what was done is added here (newest first).
 Claude decides when to raise the version number and asks for confirmation first. The version shown on screen is the version label and the UPDATED date in `index.html`.
 The in-app "UPDATED" window reads the Japanese `history.md`; this file is the English copy.
 
-## ver 0.5.60 (addendum) — 2026.10.30
+## ver 0.5.61 — 2026.10.30
 
-No version bump. The results of the single-parameter Synth1 AU measurement (OpenCode, `measure_kit`) are now in the numbers. ELITA's own output is run through the same fit script (`fit_cutoff.py`) and matched to the AU values.
+The results of the single-parameter Synth1 AU measurement (OpenCode, `measure_kit`) are now in the numbers. ELITA's own output is run through the same fit script (`fit_cutoff.py`) and matched to the AU values. The `#29` and `#30` changes can make the output up to about +7 dB louder (to match the AU's reference).
 
 - **`#19` cutoff table**: now 17 points in steps of 8 (frq 32..112 within 3 % of the AU). frq 0..24 cannot be estimated on the ELITA side, so those are provisional. The ceiling (`CUT_MAX`, 12.3 kHz) is unchanged, as measured. The ladder table was scaled by the same ratios.
 - **`#21` zero point is 64, 0.1495 oct per step** (0.5.60 had 63 / about 0.156 oct). The `#19` table had been tuned about +0.156 oct too bright to compensate, so both were fixed together.
@@ -17,7 +17,14 @@ No version bump. The results of the single-parameter Synth1 AU measurement (Open
 - **`#30` velocity**: dB = -(1 - vel) x (sens / 127) x 29.5.
 - **`#35` delay time**: a 20-step note-value table (0.1 .. 2000 ms at 120 BPM). Tempo sync is not verified.
 - **`#83` spread**: the sides were swapped (0 delays the right channel, 127 the left). 64 is zero, +-100 ms on an exponential curve.
-- Not applied: `#98` tone (the AU uses a 1st-order LP / HP; ELITA's filters are 2nd order, so the filter has to be rebuilt) and the LFO destination / waveform lists (the AU's internal value boundaries are uneven and disagree with the real UI order).
+- **LFO** (from OpenCode's re-check `VERIFY_v0.5.60b`; the earlier "destination / wave lists disagree" was a mix-up between the test-case state numbers and the real values):
+  - Wave numbers: `0 = saw down`, `1 = tri`, `2 = pulse`, `3 = s&h`, `4 = saw up`, `5 = sine`. There is no smooth `rnd`. `0` inverts the send to get a falling saw.
+  - Speed (`#43` / `#48`, free run): the measured table, 0.29 .. 94.7 Hz (it was 0.1 .. 20 Hz, about 5 times too slow at the fast end).
+  - Pitch depth (`#44` / `#49`): the measured table (8 -> 132, 64 -> 1869, 127 -> 6860 cents p-p).
+  - Destination 7 (pan) is now implemented (a Panner per voice; depth `#44 / 100` is provisional).
+- **`#98` tone**: 1-pole LP / HP (`Tone.OnePoleFilter`) with the measured 3 dB points (LP 0 -> 186 Hz .. 48 -> 5.9 kHz, HP 80 -> 40 Hz .. 127 -> 6.6 kHz).
+- **Ladder table** is back to the directly fitted measurements (no biquad ratio scaling needed).
+- Not yet applied / verified: LFO filter / p/w / FM depth (the filter's +-4800 cents is suspected to be too deep), tempo sync for LFO and delay, `#19` frq 0..16, `#24` velocity tracking, res / LP12 / HP / BP dependence, LFO key sync, and the 128-patch comparison (including the +3.3 dB `#29` and +4.0 dB `#30` headroom change).
 - Check: ELITA's `#19` / `#22` / `#29` measured the same way as the AU: cutoff within 2 % (`#22` within 7 %), gain within 0.1 dB. The 128 factory patches have not been compared again yet.
 
 ## ver 0.5.60 — 2026.10.28

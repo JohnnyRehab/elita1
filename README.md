@@ -264,7 +264,7 @@ LFO1 / LFO2（全ボイス共通）、Mod Envelope（ボイスごと）が、ピ
 - **パラメータのカーブは、一部だけ実測で合わせています。** フィルター周波数（frq 64〜112）は、Synth1 の録音から求めた対応表です（frq 0〜48 は外挿の暫定値）。アンプとフィルターエンベロープの decay / release の時間は、Synth1 の実測（D 16〜127）に合わせました（attack は別の曲線で、まだ推測です）。フィルターエンベロープの量、キートラック、レゾナンス、LFO 速度、FM 深さ、Delay 時間、Chorus などは、まだ推測です。Synth1 と比べて、音量・明るさ・変調の深さがずれます。
 - **フィルターの低い周波数（frq 0〜48）とレゾナンスは未測定です。** 周波数が低くレゾナンスが高いパッチは、Synth1 と違う音量・明るさになることがあります。`ELITA.debug.meters()` で、どの段で音量が落ちるかを確認できます。ラダー（Settings で選択）は実験機能で、128 標準パッチの平均音量はビクアッドより約 2.7 dB 小さくなります。
 - フィルターの `LPDL`（Synth1 独自のフィルター）は、LP24 で代用しています。
-- LFO の波形番号（`#42` / `#47`）は、`1 = tri`、`2 = pulse`、`3 = s&h` を実機で確認しました。`0 = saw`、`4 = sine`、`5 = rnd` は推測です。`s&h` は乱数の階段状の値、`rnd` はなめらかに変わる乱数として、タイマーで生成しています（Synth1 本来の動きとは細部が異なります）。
+- LFO の波形番号（`#42` / `#47`）は、Synth1 AU の測定で `0 = saw↓`、`1 = tri`、`2 = pulse`、`3 = s&h`、`4 = saw↑`、`5 = sine` と確認しました（Telephone = 2、Computer = 3 の実機観察とも一致）。`s&h` だけは乱数の階段状の値で、タイマーで生成しています（Synth1 本来の動きとは細部が異なります）。
 - フィルターの `sat`（`#23`）は、フィルターの直後に tanh のサチュレーターを並列に入れた近似です（0 で完全バイパス）。Synth1 本来の歪み方とは異なります。
 - 出力に簡易のソフトクリップがかかっています（レゾナンスが大きいときの音量の跳ね対策）。
 
@@ -305,7 +305,7 @@ LFO1 / LFO2（全ボイス共通）、Mod Envelope（ボイスごと）が、ピ
 | OSC1（`#0`） | sine ○ | saw ○ | pulse ◎ | tri ◎ | – | – |
 | OSC2（`#1`） | （実機に無い。128 音色にも無し） | saw ◎ | pulse ◎ | tri ◎ | noise ◎ | – |
 | Sub（`#96`） | sine △ | tri ◎ | saw △ | pulse △ | – | – |
-| LFO（`#42` / `#47`） | saw △ | tri ◎ | pulse ◎ | s&h ◎ | sine △ | rnd △ |
+| LFO（`#42` / `#47`） | saw↓ ◎ | tri ◎ | pulse ◎ | s&h ◎ | saw↑ ◎ | sine ◎ |
 
 - OSC2 の画面には sine がありません（tri / pulse / saw / noise の4つ）。`#1 = 0` のとき、エンジンは sine で鳴らします。
 - OSC1 の `0`・`1` は、実機での点灯は未確認ですが、128 音色の使われ方で裏付けがあります。`0` は Piano・Bell・Flute・Whistle・Kick、`1` は Strings・Brass・Saw lead・Sync lead に集まり、`2` は Hammond / Church / Perc Organ・Clarinet・Square lead（pulse に合う音色）、`3` は Celesta・Glocken・Piccolo・Pan Flute・Telephone（tri に合う音色）です。OSC2 も、`4` が hat・snare・Kick2・Wind・Machine Gun・Explosion（noise に合う音色）に集中しています。
