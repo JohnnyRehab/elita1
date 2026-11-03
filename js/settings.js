@@ -1,12 +1,15 @@
 /* Settings window ("settings" button under Patch Parameters).
    Engine options that are not patch parameters. The choice is kept in this browser (localStorage); nothing is sent anywhere.
    Defaults = the sound of ver 0.5.53 (everything below is off or "standard").
-   ELITA.settings = {get(), set(key, value), reset(), items}      keys: limits / filter / ladder / ladfb / curve / syncAA / slop / drift (the "Key config…" button opens js/keyconfig.js)
+   ELITA.settings = {get(), set(key, value), reset(), items}      keys: engine (core | tone; changing it reloads the page) / limits / filter / ladder / ladfb / curve / syncAA / slop / drift (the "Key config…" button opens js/keyconfig.js)
    "Voice limits" = Synth1 spec lifts the ELITA limits (5 voices, unison 3) to the ranges of the real Synth1 panel (poly up to 32 = the patch's poly number, unison up to 8).
    While it is on, a badge in the title bar says so. */
 (function () {
   const E = window.ELITA, S = E.core, KEY = 'elita1-settings';
+  const BOOT = window.ELITA_BOOT || {stored: 'core', active: 'core', forced: null, reason: ''};   // js/loader.js
   const ITEMS = [
+    {k: 'engine', title: 'Sound engine', opts: [['core', 'C++ / Wasm (light)'], ['tone', 'Tone.js (original)']],
+     note: 'C++ / Wasm: the whole sound engine runs in one AudioWorklet, with far less CPU than Tone.js, and Tone.js is not even loaded. Tone.js: the original engine, kept for comparison and for browsers that cannot run the core (it needs AudioWorklet, WebAssembly bulk memory and SIMD). Changing it reloads the page; the current patch and the volume are carried over, held notes are released.'},
     {k: 'limits', title: 'Voice limits', opts: [['elita', 'ELITA (5 voices, unison 3)'], ['synth1', 'Synth1 spec (poly 32, unison 8)']],
      note: 'ELITA keeps 5 voices and at most 3 unison voices per oscillator, to stay light. Synth1 spec uses the ranges of the real panel: as many voices as the patch\'s poly number (up to 32) and up to 8 unison voices. It needs much more CPU (the sound may crackle on a slow computer), and a badge in the title bar shows that it is on. Unison is still not available for pulse waves.'},
     {k: 'filter', title: 'Filter engine', opts: [['biquad', 'Biquad'], ['ladder', 'Ladder']],
@@ -24,12 +27,27 @@
     {k: 'drift', title: 'Slow drift', opts: [[0, 'Off'], [1, 'Low'], [2, 'Medium'], [3, 'High']],
      note: 'Pitch and cutoff of each voice wander slowly and randomly (time constant about 3 s). Not repeatable from note to note.'},
   ];
-  const DEF = {limits: 'elita', filter: 'biquad', ladder: 'soft', syncAA: 0, ladfb: 0, curve: 0, slop: 0, drift: 0};
+  const DEF = {engine: 'core', limits: 'elita', filter: 'biquad', ladder: 'soft', syncAA: 0, ladfb: 0, curve: 0, slop: 0, drift: 0};
   const SLOP = [0, 2, 5, 9], DRIFT = [0, 2, 4, 8];
   const ok = (k, v) => { const it = ITEMS.find(x => x.k === k); return !!it && it.opts.some(o => o[0] === v); };
   let cur = Object.assign({}, DEF);
   try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && typeof s === 'object') Object.keys(DEF).forEach(k => { if (ok(k, s[k])) cur[k] = s[k]; }); } catch (e) { /* no storage */ }
-  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(cur)); } catch (e) { /* ignore */ } };
+  cur.engine = BOOT.active;                                   // what is running now (the URL override of the tests and the fallback show here); BOOT.stored is what is saved
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(Object.assign({}, cur, {engine: BOOT.stored}))); } catch (e) { /* ignore */ } };
+  // Engine switch = reload (the engines are different sets of script files). The patch (.sy1 text) and the volume go through sessionStorage and are loaded again by the new page.
+  const CARRY = 'elita1-carry';
+  const carry = () => { try { sessionStorage.setItem(CARRY, JSON.stringify({sy1: E.exportSy1 ? E.exportSy1() : null, vol: E.params.vol})); } catch (e) { /* no storage: the patch is lost */ } };
+  const reload = () => { try { const u = new URL(location.href); u.searchParams.delete('engine'); location.replace(u.toString()); } catch (e) { location.reload(); } };
+  E.engineSwitch = {
+    fallback(msg) {                                           // the core failed at run time: back to Tone.js for this tab (the saved choice is kept)
+      try { sessionStorage.setItem('elita1-engine-fallback', 'the C++ / Wasm core failed to start (' + msg + ')'); } catch (e) { /* ignore */ }
+      carry(); reload();
+    }
+  };
+  try {                                                       // after a switch: bring the patch back
+    const c = JSON.parse(sessionStorage.getItem(CARRY) || 'null'); sessionStorage.removeItem(CARRY);
+    if (c) { if (c.sy1 && E.loadSy1) E.loadSy1(c.sy1); if (typeof c.vol === 'number' && E.setValue) E.setValue('vol', c.vol); }
+  } catch (e) { /* ignore */ }
   function apply() {
     S.LIMITS = cur.limits; badge();
     S.FILTER = cur.filter; S.LADDER_SAT = cur.ladder; S.SYNC_AA = !!cur.syncAA; S.LADDER_FBHP = cur.ladfb ? 150 : 0; S.CUT_SMOOTH = !!cur.curve;
@@ -45,9 +63,18 @@
     const sb = document.getElementById('pset'); if (sb) sb.classList.toggle('s1on', on);
     document.body.classList.toggle('s1spec', on);
   }
-  function set(k, v) { if (!ok(k, v)) return false; cur[k] = v; save(); apply(); paint(); return true; }
-  function reset() { cur = Object.assign({}, DEF); save(); apply(); paint(); }
-  E.settings = {get: () => Object.assign({}, cur), set, reset, items: ITEMS.map(i => i.k)};
+  function set(k, v) {
+    if (!ok(k, v)) return false;
+    if (k === 'engine') {
+      if (v === cur.engine && !(BOOT.reason && v === 'core')) return true;
+      BOOT.stored = v; cur.engine = v; try { sessionStorage.removeItem('elita1-engine-fallback'); } catch (e) { /* ignore */ }
+      save(); if (E.engine && E.engine.allOff) { try { E.engine.allOff(); } catch (e) { /* ignore */ } }
+      carry(); reload(); return true;
+    }
+    cur[k] = v; save(); apply(); paint(); return true;
+  }
+  function reset() { cur = Object.assign({}, DEF, {engine: cur.engine}); save(); apply(); paint(); }   // the engine is not reset (that would reload the page)
+  E.settings = {get: () => Object.assign({}, cur), set, reset, items: ITEMS.map(i => i.k), engine: () => BOOT};
   apply();                                                   // before the audio starts: the values are read when the voices are built / updated
 
   // ---- window ----
@@ -84,6 +111,8 @@
       box.querySelectorAll('button').forEach(b => b.classList.toggle('cur', String(cur[it.k]) === b.dataset.v));
       box.classList.toggle('dis', !!it.needs && cur[it.needs[0]] !== it.needs[1]);
     });
+    const en = dlg.querySelector('.it[data-k="engine"] .nt');
+    if (en) en.textContent = ITEMS[0].note + (BOOT.reason ? ' Now running Tone.js because ' + BOOT.reason + '.' : '') + (BOOT.forced ? ' (This page view is forced to "' + BOOT.forced + '" by ?engine= in the URL.)' : '');
   }
   dlg.querySelector('.tb').onclick = e => {
     const b = e.target.closest('button'), box = b && b.closest('.it'); if (!b || !box) return;
@@ -93,6 +122,6 @@
   dlg.querySelector('#setreset').onclick = reset;
   dlg.querySelector('#setclose').onclick = () => dlg.close();
   const tools = document.querySelector('#plist .tools');
-  if (tools) { const b = document.createElement('button'); b.type = 'button'; b.id = 'pset'; b.textContent = 'settings'; b.title = 'settings: voice limits, filter, hard sync, analog character, keyboard'; tools.appendChild(b); b.onclick = () => { paint(); dlg.showModal(); }; }
+  if (tools) { const b = document.createElement('button'); b.type = 'button'; b.id = 'pset'; b.textContent = 'settings'; b.title = 'settings: sound engine, voice limits, filter, hard sync, analog character, keyboard'; tools.appendChild(b); b.onclick = () => { paint(); dlg.showModal(); }; }
   badge(); paint();
 })();

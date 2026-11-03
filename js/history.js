@@ -11,7 +11,8 @@
   #histdlg .hb{ padding:8px 14px 12px; overflow:auto; max-height:calc(80vh - 70px); }
   #histdlg h3{ margin:10px 0 4px; font-size:13px; padding:1px 8px; background:var(--dk); color:var(--on-dk); display:inline-block; }
   #histdlg h3:first-child{ margin-top:0; }
-  #histdlg ul{ margin:4px 0 0; padding-left:18px; } #histdlg li{ margin:3px 0; }
+  #histdlg ul, #histdlg ol{ margin:4px 0 0; padding-left:18px; } #histdlg li{ margin:3px 0; }
+  #histdlg h4{ margin:10px 0 2px; font-size:12px; } #histdlg p{ margin:4px 0; }
   #histdlg code{ background:var(--sub-bg); padding:0 3px; font:11px ui-monospace,Menlo,Consolas,monospace; }
   #histdlg .hf{ display:flex; gap:6px; padding:5px 10px; border-top:1px solid var(--dk); background:var(--hd); }
   #histdlg button{ background:var(--dk); color:var(--on-dk); font:700 11px inherit; padding:2px 10px; border-radius:3px; box-shadow:inset 0 -2px 0 var(--dk-sh); cursor:pointer; }`;
@@ -22,13 +23,19 @@
   document.body.appendChild(dlg);
   const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const inline = s => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
-  function render(md) {                      // minimal markdown: "## " = version heading, "- " = bullet, "**" bold, "`" code
-    let h = '', open = false;
+  function render(md) {                      // minimal markdown: "## " = version heading, "### " = sub heading, "- " = bullet, "1. " = numbered item, plain lines = paragraph, "**" bold, "`" code
+    let h = '', list = '';                   // list: the tag of the list that is open ('ul' / 'ol' / '')
+    const close = () => { if (list) h += '</' + list + '>'; list = ''; };
     md.split('\n').forEach(l => {
-      if (/^## /.test(l)) { if (open) h += '</ul>'; open = false; h += '<h3>' + inline(l.slice(3)) + '</h3>'; }
-      else if (/^- /.test(l)) { if (!open) { h += '<ul>'; open = true; } h += '<li>' + inline(l.slice(2)) + '</li>'; }
+      let m;
+      if (/^## /.test(l)) { close(); h += '<h3>' + inline(l.slice(3)) + '</h3>'; }
+      else if (/^### /.test(l)) { close(); h += '<h4>' + inline(l.slice(4)) + '</h4>'; }
+      else if (/^- /.test(l)) { if (list !== 'ul') { close(); h += '<ul>'; list = 'ul'; } h += '<li>' + inline(l.slice(2)) + '</li>'; }
+      else if ((m = l.match(/^\d+\. (.*)$/))) { if (list !== 'ol') { close(); h += '<ol>'; list = 'ol'; } h += '<li>' + inline(m[1]) + '</li>'; }
+      else if (l.trim()) { close(); h += '<p>' + inline(l) + '</p>'; }
     });
-    return h + (open ? '</ul>' : '');
+    close();
+    return h;
   }
   let sections = null, all = false;
   const show = () => {

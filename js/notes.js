@@ -17,7 +17,7 @@ function keySync() {
     if (!P[no] || !P[[57, 58][k]]) return;
     const ty = P[[42, 47][k]];
     if (ty === 3 || ty === 4) { S.shSig[k].value = Math.random() * 2 - 1; return; }
-    if (S.lfos[k].state === 'started') { const t = Tone.now(); S.lfos[k].stop(t); S.lfos[k].start(t + 0.001); }
+    if (S.lfos[k].state === 'started') { const t = window.Tone ? Tone.now() : 0; S.lfos[k].stop(t); S.lfos[k].start(t + 0.001); }
   });
 }
 function voiceOn(n, vel = 0.8) {

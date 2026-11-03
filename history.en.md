@@ -6,6 +6,49 @@ When the version is raised, what was done is added here (newest first).
 Claude decides when to raise the version number and asks for confirmation first. The version shown on screen is the version label and the UPDATED date in `index.html`.
 The in-app "UPDATED" window reads the Japanese `history.md`; this file is the English copy.
 
+## ver 0.5.7 — 2026.11.03
+
+**The sound engine has been replaced by a C++ / WebAssembly core.** The Tone.js sound path used too much CPU to get the lightness of the real Synth1, so only the audio processing was moved into a C++ core that runs inside one AudioWorklet. The UI (panel, keyboard, patches, MIDI, arpeggiator) is unchanged. The new engine is the default, and the original Tone.js engine can be chosen in Settings. The technical notes are in [core/README.md](core/README.md) (Japanese).
+
+### How it went
+
+1. **The question:** it started with "the audio is limited by JavaScript / Tone.js and too heavy; is there a way out, such as Wasm?". So Tone.js was taken out of the audio path and the audio processing was gathered into one AudioWorklet.
+2. **Decisions:** reuse the UI as it is and lighten only the sound engine; use **C / C++** rather than Rust (freestanding C++17 with no libc, no exceptions and no heap, built with clang and wasm-ld only, no Emscripten). The built `.wasm` is included, so you do not need to build it to use it.
+3. **Method:** the original engine is the reference and the aim is "the same sound". Each stage was checked by **A/B tests that play the same patch on the old engine and the new core and compare the waveforms**, and the blocks were also compared directly with the real Web Audio nodes (`BiquadFilterNode`, `DynamicsCompressorNode`, ...) and Tone.js's `Envelope`.
+
+### Milestones
+
+- **M1 (skeleton):** one voice, OSC1 / OSC2, filter, envelopes, unison, master / pan, soft clip; a switch between the engines and a CPU comparison. Band-limited wavetables (11 octaves), our own math functions, a filter with the same formulas as Chromium's BiquadFilterNode.
+- **M2a:** sub, ring, hard sync (with PolyBLEP / PolyBLAMP), FM, unison stereo width (#84).
+- **M2b:** two LFOs (all shapes, 7 destinations, tempo sync, key sync), the mod envelope, the ladder filter, per-voice slop / drift, the unison pitch layer (#85).
+- **M3:** all the effects (3 distortions, deci., r.m., comp., ph.1-4, EQ, tone, chorus x1-x4, stereo delay, limiter). The compressor and limiter use the same algorithm as Chromium's `DynamicsCompressorNode`, within -80 dB of the real node.
+- **M4:** **the engine can be chosen in Settings** (no URL needed). With C++ / Wasm, Tone.js is not loaded at all.
+
+### Settings > Sound engine
+
+- The choices are **C++ / Wasm** (default) and **Tone.js** (original). Changing it reloads the page and carries the current patch and master volume over (held notes stop). The choice is saved in this browser.
+- If the browser cannot run AudioWorklet / WebAssembly (bulk memory, SIMD), or the core fails to start, that tab uses Tone.js automatically and Settings says why (the saved choice is unchanged).
+- `?engine=core` / `?engine=tone` in the URL forces one for that page view (not saved). `reset to defaults` does not change the engine.
+- The script tags of `index.html` were replaced by a single `js/loader.js`.
+
+### Results
+
+- **CPU load** (same Chromium, share of one core): 5 voices 35.3% old -> 1.6% new; 5 voices with unison 3 73.5% -> 2.9%; 16 voices with unison 4 247% -> 9.9%; 32 voices with unison 8 (the Synth1 maximum) 1608% -> 34.2% (about 22 to 47 times; the old engine's numbers vary by 10 to 50% between runs). Start-up went from 0.5 to 11 seconds down to about 0.08 seconds.
+- **79 A/B cases** pass. There are also unit tests for the math, filters, envelopes, oscillators, LFO, analog character and effects, a page smoke test, and the engine-switch test (25 checks).
+
+### What we found
+
+- The roughly 6 ms delay of the old engine was not Tone's scheduling but the 6 ms look-ahead of the last-stage limiter (`DynamicsCompressorNode`). The new core uses the same 6 ms (it can be set from 0 to 20 ms in the core's configuration).
+- In the phaser, connecting a `Tone.LFO` to `Filter.frequency` makes Tone overwrite the signal's own value (600 Hz), so the sweep is +-depth around 0 Hz. The new core matches that behaviour.
+- A bug in the new core, where the unison detune was applied to the (non-unison) pulse wave, was fixed. The stereo width (#84) is built in the old engine from a second set of oscillators and a fold-down factor, so it is reproduced with the same structure.
+- A very steep pitch sweep (2700 cents in a few ms) differs in waveform by about 0.03 to 0.08 cycle (level and pitch track match). We think the cause is that the old engine's envelope and oscillator start a few samples apart, but we did not isolate it. Only these 3 A/B cases have a looser tolerance.
+
+### Known limits
+
+- Verified only on Chromium (headless). Safari / Firefox are untested.
+- The new core band-limits the pulse wave, so it has no aliasing; noise is random, so its waveform cannot match.
+- The files of the original Tone.js engine (`Tone.js`, `voice.js`, `fx.js`, `worklets.js`, `debug.js`) are kept so that it can be chosen in Settings (they are not loaded when C++ / Wasm is chosen).
+
 ## ver 0.5.61 — 2026.10.30
 
 The results of the single-parameter Synth1 AU measurement (OpenCode, `measure_kit`) are now in the numbers. ELITA's own output is run through the same fit script (`fit_cutoff.py`) and matched to the AU values. The `#29` and `#30` changes can make the output up to about +7 dB louder (to match the AU's reference).

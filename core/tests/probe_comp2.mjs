@@ -1,0 +1,20 @@
+// diagnosis: gain over time of the native compressor vs the core for one signal (limiter settings, noise bursts)
+import fs from 'fs'; import path from 'path'; import {fileURLToPath} from 'url'; import {createRequire} from 'module';
+import {serve} from './serve.mjs';
+const require = createRequire(import.meta.url), {chromium} = require('playwright');
+const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..'), SR = 48000, N = 24000;
+const {instance} = await WebAssembly.instantiate(fs.readFileSync(path.join(root, 'js/core/elita_core.wasm')), {}), e = instance.exports; e.ec_init(SR);
+const {srv, port} = await serve(root), browser = await chromium.launch(), page = await browser.newPage();
+await page.goto(`http://localhost:${port}/core/tests/blank.html`);
+let seed = 1; const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296 * 2 - 1;
+const A = +process.argv[2] || 0.7, opt = JSON.parse(process.argv[3] || '{"threshold":-2,"ratio":20,"attack":0.003,"release":0.01,"knee":30}');
+const SIN = process.argv[4] === 'sine'; const l = Array.from({length: N}, (_, i) => SIN ? (i < 6000 ? 0.05 : i < 14000 ? 0.9 : 0.05) * Math.sin(2 * Math.PI * 440 * i / SR) : (i % 8000 < 3000 ? A : 0.02) * rnd());
+const nat = await page.evaluate(async ({opt, l, SR}) => { const ctx = new OfflineAudioContext(2, l.length, SR), b = ctx.createBuffer(2, l.length, SR); b.getChannelData(0).set(l); b.getChannelData(1).set(l);
+  const s = ctx.createBufferSource(); s.buffer = b; const c = ctx.createDynamicsCompressor(); Object.keys(opt).forEach(k => c[k].value = opt[k]); s.connect(c); c.connect(ctx.destination); s.start();
+  const o = await ctx.startRendering(); return Array.from(o.getChannelData(0)); }, {opt, l, SR});
+const d = new Float32Array(e.memory.buffer, e.ec_dbg_buf(), 2 * N); d.set(l, 0); d.set(l, N);
+e.ec_dbg_comp(0, N, opt.threshold, opt.knee, opt.ratio, opt.attack, opt.release, 0.006);
+const me = Array.from(new Float32Array(e.memory.buffer, e.ec_dbg_buf(), N));
+const D = 288; const g = (y, i) => { let a = 0, b = 0; for (let k = i; k < i + 32; k++) { a += y[k] * l[k - D]; b += l[k - D] ** 2; } return 10 * Math.log10((a / b) ** 2 + 1e-30); };
+for (let i = 288; i < N - 300; i += +(process.argv[5] || 700)) console.log(String(i).padStart(6), 'native', g(nat, i).toFixed(2).padStart(7), 'mine', g(me, i).toFixed(2).padStart(7));
+await browser.close(); srv.close();

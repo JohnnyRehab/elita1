@@ -3,12 +3,12 @@
 **日本語** | [English](README.en.md)
 
 Synth1 のパッチ（`.sy1`）をブラウザで試聴するための、フリーのシンセサイザー。
-画面は NexusUI.js、音は Tone.js（Web Audio）で作っています。
+画面は NexusUI.js、音は C++ で書いた DSP コア（WebAssembly、既定）または Tone.js（Web Audio、従来のエンジン）で作っています。
 
 > **Synth1 の再現ではありません。** 内部構成（OSC → Filter → Amp、LFO、Mod Envelope、各エフェクト）は Synth1 に合わせていますが、各つまみの値と音色の対応は推測を含み、Synth1 と同じ音にはなりません。パッチの「だいたいの傾向」を聴くためのものです。
 > 本プロジェクトは Synth1 の作者・配布元とは無関係の非公式プロジェクトです。
 
-現在のバージョン: **ver 0.5.60**（更新内容は [history.md](history.md)、英語版は [history.en.md](history.en.md)）
+現在のバージョン: **ver 0.5.7**（更新内容は [history.md](history.md)、英語版は [history.en.md](history.en.md)）
 
 ![ELITA-1](docs/screenshot.png)
 
@@ -32,7 +32,8 @@ Settings の「Key config…」で、PC キーの割り当てを変えられま�
 - `.sy1` パッチの読み込み（1 ファイル、またはフォルダを指定して ↑↓ キーで切り替え）
 - 画面下の鍵盤と PC キーボードで演奏（オクターブ切替あり）。外部の MIDI 機器やシーケンサーからも演奏可能（MIDI 入力、CC ラーン、クロック同期）
 - 出力波形のオシロスコープ表示
-- **Settings**: Voice limits（ELITA / Synth1 spec）、フィルター方式（Biquad / Ladder）、ハードシンクのアンチエイリアス（PolyBLEP）、ボイスごとの個体差とドリフトを選べます（下の「仕組み」を参照）
+- **サウンドエンジンを選べます**（Settings > Sound engine）: **C++ / Wasm**（既定。音声処理の全てが 1 つの AudioWorklet 内で動き、Tone.js は読み込まれません。従来エンジンの約 20〜50 倍軽い）/ Tone.js（従来のエンジン）。詳しくは [core/README.md](core/README.md)
+- **Settings**: サウンドエンジン、Voice limits（ELITA / Synth1 spec）、フィルター方式（Biquad / Ladder）、ハードシンクのアンチエイリアス（PolyBLEP）、ボイスごとの個体差とドリフトを選べます（下の「仕組み」を参照）
 - **テーマ**: 配色 4 種と、色ごとの編集・書き出し・読み込み
 - **MIDI 入力**（CC ラーン、MIDI クロックで BPM 同期）、セッションログ、`.sy1` の書き出し
 - 画面上部の「UPDATED」をクリックすると、`history.md` の最新の更新内容が見られます（`show all` で全履歴）。
@@ -184,6 +185,7 @@ Patch Parameters 下部の「theme」ボタンで、配色のウィンドウが�
 ```
 elita1/
 ├── index.html          メイン画面（パネル + 鍵盤 + 波形 + パラメーター一覧）
+├── core/               C++ の DSP コア（elita_core.cpp）、ビルドスクリプト、検証テスト、README
 ├── css/
 │   ├── reset.css
 │   ├── style.css       Synth1 風の見た目
@@ -193,7 +195,9 @@ elita1/
 ├── docs/               スクリーンショット（screenshot / settings / theme / midi）
 ├── img/                アイコン（e1.png）と波形アイコン（SVG）
 └── js/
-    ├── Tone.js         Tone.js 14.8.49（同梱）
+    ├── loader.js       起動時に使うエンジンを決め、必要なスクリプトだけを読み込む（Settings > Sound engine）
+    ├── core/           C++ / Wasm コアのブラウザー側（core-engine.js、core-worklet.js、ビルド済み elita_core.wasm）
+    ├── Tone.js         Tone.js 14.8.49（同梱。従来エンジンを選んだときだけ読み込む）
     ├── NexusUI.js      NexusUI（同梱）
     ├── ui.js           画面。つまみを Synth1 のパラメータ番号で登録
     ├── calib.js        校正値（カーブ・波形テーブル・ポリ数 / unison 数）と共有状態 ELITA.core
@@ -230,10 +234,11 @@ ELITA.check()         // 表示と値の一致を確認（不一致の一覧、�
 ELITA.loadSy1(text)   // .sy1 のテキストを読み込む
 ```
 
-`engine.js`（と calib / voice / fx / notes）は `ELITA.onChange` を受けて Tone.js の各ノードを更新します。画面と音源が分かれているので、音源だけ差し替えることもできます。
+音源は 2 種類あります。既定の **C++ / Wasm コア**（`js/core/core-engine.js`）は `ELITA.onChange` を受けて、1 つの AudioWorklet の中の C++ コアにパラメーターとノートを送ります。**従来の Tone.js エンジン**（`engine.js` と calib / voice / fx / notes）は Tone.js の各ノードを更新します。画面と音源が分かれているので、音源だけ差し替えられます。どちらを使うかは `js/loader.js` が起動時に決め、必要なファイルだけを読み込みます。
 
 **Settings**（Patch Parameters 下部の「settings」ボタン）: パッチのパラメーターではなく、エンジンの動作を選びます。選んだ内容はこのブラウザーに保存されます（`localStorage`）。既定値はすべて、従来（0.5.53）と同じ音です。
 
+- **Sound engine**: C++ / Wasm（既定。Tone.js は読み込まれません）/ Tone.js（従来のエンジン）。切り替えるとページが再読み込みされ、現在のパッチと音量は引き継がれます。ブラウザーが AudioWorklet・WebAssembly（bulk memory、SIMD）に対応していないとき、またはコアの起動に失敗したときは、自動で Tone.js になり、理由が Settings に出ます。URL の `?engine=core` / `?engine=tone` で、そのページだけ強制もできます。
 - **Voice limits**: ELITA（既定。5 ボイス、unison は 1 オシレーターあたり最大 3 本。負荷を抑えるため）/ Synth1 spec（実機の画面の範囲に合わせます。ボイス数はパッチの poly 値のとおり最大 32、unison は最大 8 本）。Synth1 spec のあいだは、タイトルバーに黄色の「SYNTH1 SPEC MODE」、鍵盤の横の表示に「(Synth1 spec)」、Settings ボタンの黄色表示が出ます。CPU 負荷がかなり大きくなり（待機中のボイスも動き続けます）、遅い PC では音が途切れることがあります。パルス波の unison は、このモードでも未対応です。
 - **Filter engine**: Biquad（既定、Synth1 の録音に合わせて調整）/ Ladder（実験、4 ポール 24 dB/oct）。ローパス 24 dB のタイプだけがラダーになります。以前の `?filter=ladder` は廃止しました。
 - **Ladder character**: Soft limit（既定）/ Per-stage tanh（各段で tanh、トランジスターラダー風）。
@@ -325,6 +330,15 @@ Synth1 のファクトリープリセット相当 128 音色（すべて `ver=10
 - 値の範囲: `#14` は 0〜3、`#31` は 1〜4、`#32` は 0〜3、`#38` は 0〜2、`#41` は 1〜5、`#42` は 0〜5、`#46` は 0〜5、`#47` は 1〜3、`#64` は 1 / 2 / 4。`#1` に 0 はなし。いずれも現在の選択肢の範囲内です。
 - `#23`（sat）は 123 音色が 0 で、効くのは 5 音色だけです。
 
+### C++ コアと従来エンジンの差
+
+C++ コアは、従来エンジンの音を A/B テスト（79 ケース）で再現しています。意図的な差と未検証の点は [core/README.md](core/README.md) にまとめています。主なもの:
+
+- 2700 セントを数 ms で動かす急峻なピッチスイープ（Mod Envelope の速いアタック → OSC2 pitch、LFO の saw down）は、波形が約 0.03〜0.08 周期ずれます（音量・ピッチの軌跡は一致。原因は旧エンジン側のタイミングのずれと見ていますが、切り分けてはいません）。
+- パルス波は、新コアは帯域制限しており折り返し雑音がありません。ノイズは乱数のため波形は一致しません。
+- リミッターの先読み 6 ms（旧エンジンと同じ）が出力の遅れになっています。コアの設定で 0〜20 ms に変えられますが、Settings には出していません。
+- Chromium 以外のブラウザー（Safari、Firefox）では動作確認していません。
+
 ### その他
 
 - 既定ではボイス数は 5 です（`calib.js` の `POLY`）。Synth1 の画面の範囲（poly 最大 32）に合わせたいときは、Settings の「Voice limits」を「Synth1 spec」にします。
@@ -336,6 +350,7 @@ Synth1 のファクトリープリセット相当 128 音色（すべて `ver=10
 
 ## 今後の候補
 
+- Safari / Firefox での C++ コアの動作確認、リミッター先読み（遅れ）を Settings で選べるようにする
 - 各カーブを、Synth1 の録音と比べて調整（フィルターの低域とレゾナンス、attack の時間、フィルターエンベロープの量、キートラック）
 - MIDI のプログラムチェンジでパッチ切り替え、MIDI 出力
 - 直前のフォルダの記憶
@@ -351,7 +366,8 @@ ELITA-1 は、Daichi（Ichiro Toda）氏のソフトシンセ **Synth1** を手�
 
 ## 使用ライブラリ
 
-- [Tone.js](https://tonejs.github.io/) 14.8.49（MIT License）
+- [Tone.js](https://tonejs.github.io/) 14.8.49（MIT License。従来のエンジンを選んだときだけ使います）
+- C++ / Wasm コアは自作で、外部ライブラリを使っていません（libc も不使用）
 - [NexusUI](https://nexus-js.github.io/ui/)（MIT License）
 
 ## ライセンスと注意

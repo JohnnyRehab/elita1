@@ -56,7 +56,9 @@ function applyAll() {
 
 // ---- hook up to the panel ----
 let pending = false, started = null;
-function refresh() { if (!S.voices || pending) return; pending = true; queueMicrotask(() => { pending = false; applyAll(); }); }
+function refresh() { if (S.CORE) { const c = window.ELITA.engine; if (c && c.refresh !== refresh) c.refresh(); return; }   // S.CORE: the C++ / Wasm core (js/core/core-engine.js) is the engine: Settings / BPM go to it, this one stays idle
+ if (!S.voices || pending) return;
+ pending = true; queueMicrotask(() => { pending = false; applyAll(); }); }
 async function start() {
   if (!started) started = (async () => { await Tone.start(); await initAudio(); document.body.classList.add('audio-on'); if (E.debug.enabled) { S.getMeters(); E.debug.graph(); } })();
   return started;

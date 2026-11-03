@@ -3,12 +3,12 @@
 [日本語](README.md) | **English**
 
 A free synthesizer for auditioning Synth1 patches (`.sy1`) in the browser.
-The panel is built with NexusUI.js and the sound with Tone.js (Web Audio).
+The panel is built with NexusUI.js and the sound with a DSP core written in C++ (WebAssembly, the default) or Tone.js (Web Audio, the original engine).
 
 > **This is not a reproduction of Synth1.** The internal structure (OSC → Filter → Amp, LFO, Mod Envelope, effects) follows Synth1, but the mapping from knob values to sound includes guesses, so it will not sound the same as Synth1. It is meant for hearing the general character of a patch.
 > This is an unofficial project and has no connection with the author or distributor of Synth1.
 
-Current version: **ver 0.5.60** (see [history.en.md](history.en.md) for what changed)
+Current version: **ver 0.5.7** (see [history.en.md](history.en.md) for what changed)
 
 ![ELITA-1](docs/screenshot.png)
 
@@ -32,7 +32,8 @@ When "Voice limits" in Settings is set to "Synth1 spec", a yellow "SYNTH1 SPEC M
 - Loads `.sy1` patches (a single file, or pick a folder and switch with the ↑↓ keys)
 - Play with the on-screen keyboard and the PC keyboard (with octave shift). Can also be played from external MIDI devices and sequencers (MIDI input, CC learn, clock sync)
 - Oscilloscope display of the output waveform
-- **Settings**: choose the voice limits (ELITA / Synth1 spec), the filter engine (Biquad / Ladder), hard-sync anti-aliasing (PolyBLEP), and per-voice variance and drift (see "How it works" below)
+- **Choose the sound engine** (Settings > Sound engine): **C++ / Wasm** (the default: the whole sound engine runs in one AudioWorklet and Tone.js is not even loaded; about 20 to 50 times lighter than the original engine) / Tone.js (the original engine). See [core/README.md](core/README.md) (Japanese)
+- **Settings**: choose the sound engine, the voice limits (ELITA / Synth1 spec), the filter engine (Biquad / Ladder), hard-sync anti-aliasing (PolyBLEP), and per-voice variance and drift (see "How it works" below)
 - **Themes**: 4 colour themes, with per-colour editing, export and import
 - **MIDI input** (CC learn, BPM sync from MIDI clock), session log, and `.sy1` export
 - Click "UPDATED" at the top of the screen to see the latest entry of `history.md` (`show all` for the whole history). The in-app viewer shows the Japanese `history.md`; the English version is [history.en.md](history.en.md).
@@ -184,6 +185,7 @@ The "theme" button at the bottom of Patch Parameters opens the colour window.
 ```
 elita1/
 ├── index.html          main page (panel + keyboard + waveform + parameter list)
+├── core/               the C++ DSP core (elita_core.cpp), build script, tests, README
 ├── css/
 │   ├── reset.css
 │   ├── style.css       Synth1-style look
@@ -193,7 +195,9 @@ elita1/
 ├── docs/               screenshots (screenshot / settings / theme / midi)
 ├── img/                icon (e1.png) and waveform icons (SVG)
 └── js/
-    ├── Tone.js         Tone.js 14.8.49 (bundled)
+    ├── loader.js       decides the engine at start-up and loads only the scripts it needs (Settings > Sound engine)
+    ├── core/           the browser side of the C++ / Wasm core (core-engine.js, core-worklet.js, the built elita_core.wasm)
+    ├── Tone.js         Tone.js 14.8.49 (bundled; loaded only when the original engine is chosen)
     ├── NexusUI.js      NexusUI (bundled)
     ├── ui.js           the panel; registers every knob by its Synth1 parameter number
     ├── calib.js        calibration (curves, wave tables, voice / unison counts) and the shared state ELITA.core
@@ -230,10 +234,11 @@ ELITA.check()         // check that the display and the values agree (list of mi
 ELITA.loadSy1(text)   // load .sy1 text
 ```
 
-`engine.js` (with calib / voice / fx / notes) receives `ELITA.onChange` and updates the Tone.js nodes. The panel and the sound engine are separate, so the engine can be replaced on its own.
+There are two sound engines. The default **C++ / Wasm core** (`js/core/core-engine.js`) receives `ELITA.onChange` and sends the parameters and notes to the C++ core inside one AudioWorklet. The **original Tone.js engine** (`engine.js` with calib / voice / fx / notes) updates the Tone.js nodes. The panel and the sound engine are separate, so the engine can be replaced on its own. `js/loader.js` decides which one to use at start-up and loads only the files it needs.
 
 **Settings** (the "settings" button at the bottom of Patch Parameters): these are not patch parameters; they choose how the engine behaves. Your choices are saved in this browser (`localStorage`). All defaults give the same sound as before (0.5.53).
 
+- **Sound engine**: C++ / Wasm (default; Tone.js is not loaded) / Tone.js (the original engine). Changing it reloads the page and carries the current patch and volume over. If the browser cannot run AudioWorklet / WebAssembly (bulk memory, SIMD), or the core fails to start, Tone.js is used automatically and Settings says why. `?engine=core` / `?engine=tone` in the URL forces one for that page view.
 - **Voice limits**: ELITA (default: 5 voices, at most 3 unison voices per oscillator, to stay light) / Synth1 spec (the ranges of the real panel: as many voices as the patch's poly number, up to 32, and up to 8 unison voices). While Synth1 spec is on, a yellow "SYNTH1 SPEC MODE" badge is shown in the title bar, "(Synth1 spec)" appears next to the voice counter at the keyboard, and the settings button is lit yellow. CPU load becomes much higher (idle voices keep running too), and the sound may crackle on a slow computer. Unison for pulse waves is still not supported in this mode.
 - **Filter engine**: Biquad (default, tuned to Synth1 recordings) / Ladder (experimental, 4-pole 24 dB/oct). Only the low-pass 24 dB type uses the ladder. The former `?filter=ladder` URL option has been removed.
 - **Ladder character**: Soft limit (default) / Per-stage tanh (tanh on every stage, transistor-ladder style).
@@ -324,6 +329,15 @@ The 128 sounds equivalent to the Synth1 factory presets (all `ver=105`, paramete
 - Value ranges: `#14` is 0–3, `#31` is 1–4, `#32` is 0–3, `#38` is 0–2, `#41` is 1–5, `#42` is 0–5, `#46` is 0–5, `#47` is 1–3, `#64` is 1 / 2 / 4. `#1` is never 0. All are within the current choices.
 - `#23` (sat) is 0 in 123 patches; only 5 patches use it.
 
+### C++ core versus the original engine
+
+The C++ core reproduces the sound of the original engine in A/B tests (79 cases). The intentional differences and the points not yet verified are collected in [core/README.md](core/README.md) (Japanese). The main ones:
+
+- Very steep pitch sweeps (2700 cents in a few ms: a fast Mod Envelope attack to OSC2 pitch, LFO saw down) differ in waveform by a constant phase offset of about 0.03 to 0.08 cycle (level and pitch track match; we think the cause is timing on the old engine's side, but did not isolate it).
+- The new core band-limits the pulse wave, so it has no aliasing; noise is random, so its waveform cannot match.
+- The limiter's 6 ms look-ahead (the same as the original engine) is the output delay. It can be set from 0 to 20 ms in the core's configuration, but Settings does not offer it.
+- Browsers other than Chromium (Safari, Firefox) have not been tested.
+
 ### Other
 
 - By default the voice count is 5 (`POLY` in `calib.js`). To match the range of the Synth1 panel (poly up to 32), set "Voice limits" in Settings to "Synth1 spec".
@@ -335,6 +349,7 @@ The 128 sounds equivalent to the Synth1 factory presets (all `ver=105`, paramete
 
 ## Ideas for later
 
+- Test the C++ core on Safari / Firefox, and let Settings choose the limiter look-ahead (the delay)
 - Adjust each curve by comparing with Synth1 recordings (filter low range and resonance, attack times, filter envelope amount, key tracking)
 - Switching patches with MIDI program change, MIDI output
 - Remembering the last folder
@@ -350,7 +365,8 @@ ELITA-1 is modelled on the soft synth **Synth1** by Daichi (Ichiro Toda), with r
 
 ## Libraries used
 
-- [Tone.js](https://tonejs.github.io/) 14.8.49 (MIT License)
+- [Tone.js](https://tonejs.github.io/) 14.8.49 (MIT License; used only when the original engine is chosen)
+- The C++ / Wasm core is our own code and uses no external library (not even libc)
 - [NexusUI](https://nexus-js.github.io/ui/) (MIT License)
 
 ## License and notes
