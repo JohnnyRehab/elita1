@@ -8,7 +8,7 @@ Synth1 のパッチ（`.sy1`）をブラウザで試聴するための、フリ�
 > **Synth1 の再現ではありません。** 内部構成（OSC → Filter → Amp、LFO、Mod Envelope、各エフェクト）は Synth1 に合わせていますが、各つまみの値と音色の対応は推測を含み、Synth1 と同じ音にはなりません。パッチの「だいたいの傾向」を聴くためのものです。
 > 本プロジェクトは Synth1 の作者・配布元とは無関係の非公式プロジェクトです。
 
-現在のバージョン: **ver 0.5.7**（更新内容は [history.md](history.md)、英語版は [history.en.md](history.en.md)）
+現在のバージョン: **ver 0.5.7b**（更新内容は [history.md](history.md)、英語版は [history.en.md](history.en.md)）
 
 ![ELITA-1](docs/screenshot.png)
 
@@ -33,7 +33,7 @@ Settings の「Key config…」で、PC キーの割り当てを変えられま�
 - 画面下の鍵盤と PC キーボードで演奏（オクターブ切替あり）。外部の MIDI 機器やシーケンサーからも演奏可能（MIDI 入力、CC ラーン、クロック同期）
 - 出力波形のオシロスコープ表示
 - **サウンドエンジンを選べます**（Settings > Sound engine）: **C++ / Wasm**（既定。音声処理の全てが 1 つの AudioWorklet 内で動き、Tone.js は読み込まれません。従来エンジンの約 20〜50 倍軽い）/ Tone.js（従来のエンジン）。詳しくは [core/README.md](core/README.md)
-- **Settings**: サウンドエンジン、Voice limits（ELITA / Synth1 spec）、フィルター方式（Biquad / Ladder）、ハードシンクのアンチエイリアス（PolyBLEP）、ボイスごとの個体差とドリフトを選べます（下の「仕組み」を参照）
+- **Settings**: サウンドエンジン、DSP flavor: Filter（ELITA / OpenSynth1。OpenSynth1 のフィルターを選べます。出典は `core/os1/NOTICE-OpenSynth1.md`）、Voice limits（ELITA / Synth1 spec）、フィルター方式（Biquad / Ladder）、ハードシンクのアンチエイリアス（PolyBLEP）、ボイスごとの個体差とドリフトを選べます（下の「仕組み」を参照）
 - **テーマ**: 配色 4 種と、色ごとの編集・書き出し・読み込み
 - **MIDI 入力**（CC ラーン、MIDI クロックで BPM 同期）、セッションログ、`.sy1` の書き出し
 - 画面上部の「UPDATED」をクリックすると、`history.md` の最新の更新内容が見られます（`show all` で全履歴）。
@@ -367,12 +367,15 @@ ELITA-1 は、Daichi（Ichiro Toda）氏のソフトシンセ **Synth1** を手�
 ## 使用ライブラリ
 
 - [Tone.js](https://tonejs.github.io/) 14.8.49（MIT License。従来のエンジンを選んだときだけ使います）
-- C++ / Wasm コアは自作で、外部ライブラリを使っていません（libc も不使用）
-- [NexusUI](https://nexus-js.github.io/ui/)（MIT License）
+- C++ / Wasm コアは自作で、外部ライブラリを使っていません（libc も不使用）。ただし、フィルターなどに [OpenSynth1](https://github.com/letsdig/OpenSynth1)（MIT License）のコードを取り込んでいます（`core/os1/`）
+- [NexusUI](https://nexus-js.github.io/ui/) 2.1.6（MIT License）
+- [destyle.css](https://github.com/nicolas-cusan/destyle.css) 2.0.2（MIT License）
+
+各ライブラリの著作権表示とライセンス全文は [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) にあります。
 
 ## ライセンスと注意
 
-- このリポジトリのコードのライセンスは、公開時に決めて `LICENSE` を追加してください（例: MIT）。
+- **ELITA-1 のコードとドキュメントは MIT License です**（[LICENSE](LICENSE)）。同梱している第三者のコードは、それぞれのライセンスに従います（[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)、`js/Tone.js.LICENSE.txt`、`core/os1/NOTICE-OpenSynth1.md`）。再配布するときは、これらのファイルを残してください。
 - **Synth1 のパッチ（`.sy1`）は、それぞれの作者に権利があります。** 許可なくリポジトリに含めて再配布しないでください。本リポジトリにはパッチを含めていません。
 - 「Synth1」は、作者（Ichiro Toda 氏）の製品名です。本プロジェクトは非公式であり、作者・配布元とは関係ありません。
-- `img/e1.png` は本プロジェクト用のアイコンです。再利用する場合は、作者の意向に従ってください。
+- `img/e1.png` は本プロジェクト用のアイコンです。MIT License の対象外で、再利用する場合は作者の意向に従ってください。`img/e1.png` と `img/triangle.svg` には、Claude（Anthropic）が作成に関わったことを示す情報（C2PA）が埋め込まれています。

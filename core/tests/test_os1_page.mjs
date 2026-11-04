@@ -1,0 +1,30 @@
+// Settings > "DSP flavor: Filter" on the real page (?engine=core): the button exists, switching it reaches the core and changes the sound, it is saved, "reset to defaults" turns it off.
+import path from 'path'; import {fileURLToPath} from 'url'; import {createRequire} from 'module'; import {serve} from './serve.mjs';
+const require = createRequire(import.meta.url), {chromium} = require('playwright');
+const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const {srv, port} = await serve(root);
+const browser = await chromium.launch({args: ['--autoplay-policy=no-user-gesture-required']}), page = await browser.newPage();
+const errors = []; page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); }); page.on('pageerror', e => errors.push('pageerror: ' + e.message));
+await page.goto(`http://localhost:${port}/index.html?engine=core`);
+await page.waitForFunction(() => window.ELITA && ELITA.engine && ELITA.engine.core);
+let fail = 0; const report = (n, ok, m = '') => { if (!ok) fail++; console.log((ok ? 'ok   ' : 'FAIL ') + n.padEnd(50) + m); };
+const dump = () => page.evaluate(() => Array.from(ELITA.engine.wave().getValue()));
+const rough = d => { let s = 0; for (let i = 1; i < d.length; i++) s += Math.abs(d[i] - d[i - 1]); return s; };
+await page.evaluate(() => ELITA.engine.start()); await page.waitForTimeout(300);
+report('default is ELITA', await page.evaluate(() => ELITA.settings.get().os1filter) === 0);
+await page.evaluate(() => { ELITA.setValue(14, 1); ELITA.setValue(19, 70); ELITA.setValue(20, 60); ELITA.engine.noteOn(48, 0.8); }); await page.waitForTimeout(600);
+const avgRough = async () => { let t = 0; for (let i = 0; i < 6; i++) { t += rough(await dump()); await page.waitForTimeout(37); } return t / 6; };   // the scope window moves along the waveform: average several snapshots
+const a = await dump(), ra = await avgRough();
+await page.click('#pset'); report('Settings dialog has the item', await page.locator('#setdlg .it[data-k="os1filter"]').count() === 1);
+await page.click('#setdlg .it[data-k="os1filter"] button[data-v="1"]'); await page.waitForTimeout(600);
+report('button shows the selection', await page.locator('#setdlg .it[data-k="os1filter"] button.cur').getAttribute('data-v') === '1');
+const b = await dump();
+let diff = 0; for (let i = 0; i < Math.min(a.length, b.length); i++) diff += Math.abs(a[i] - b[i]);
+report('sound changes when switched (same note, same patch)', diff > 1 && b.every(Number.isFinite) && Math.max(...b.map(Math.abs)) > 0.01, `waveform roughness ${rough(a).toFixed(1)} -> ${rough(b).toFixed(1)}`);
+report('choice is saved in this browser', await page.evaluate(() => JSON.parse(localStorage.getItem('elita1-settings')).os1filter) === 1);
+await page.click('#setreset'); await page.waitForTimeout(600);
+report('reset to defaults turns it off', await page.evaluate(() => ELITA.settings.get().os1filter) === 0);
+const rc = await avgRough();
+report('ELITA sound back after reset (same waveform shape)', Math.abs(ra - rc) < ra * 0.1, `mean roughness ${ra.toFixed(2)} vs ${rc.toFixed(2)}`);
+report('no console errors', errors.length === 0, errors.join(' | '));
+await browser.close(); srv.close(); console.log(fail ? `\n${fail} FAILED` : '\nall passed'); process.exit(fail ? 1 : 0);

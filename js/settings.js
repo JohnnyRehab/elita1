@@ -1,7 +1,7 @@
 /* Settings window ("settings" button under Patch Parameters).
    Engine options that are not patch parameters. The choice is kept in this browser (localStorage); nothing is sent anywhere.
    Defaults = the sound of ver 0.5.53 (everything below is off or "standard").
-   ELITA.settings = {get(), set(key, value), reset(), items}      keys: engine (core | tone; changing it reloads the page) / limits / filter / ladder / ladfb / curve / syncAA / slop / drift (the "Key config…" button opens js/keyconfig.js)
+   ELITA.settings = {get(), set(key, value), reset(), items}      keys: engine (core | tone; changing it reloads the page) / limits / os1filter / filter / ladder / ladfb / curve / syncAA / slop / drift (the "Key config…" button opens js/keyconfig.js)
    "Voice limits" = Synth1 spec lifts the ELITA limits (5 voices, unison 3) to the ranges of the real Synth1 panel (poly up to 32 = the patch's poly number, unison up to 8).
    While it is on, a badge in the title bar says so. */
 (function () {
@@ -12,6 +12,8 @@
      note: 'C++ / Wasm: the whole sound engine runs in one AudioWorklet, with far less CPU than Tone.js, and Tone.js is not even loaded. Tone.js: the original engine, kept for comparison and for browsers that cannot run the core (it needs AudioWorklet, WebAssembly bulk memory and SIMD). Changing it reloads the page; the current patch and the volume are carried over, held notes are released.'},
     {k: 'limits', title: 'Voice limits', opts: [['elita', 'ELITA (5 voices, unison 3)'], ['synth1', 'Synth1 spec (poly 32, unison 8)']],
      note: 'ELITA keeps 5 voices and at most 3 unison voices per oscillator, to stay light. Synth1 spec uses the ranges of the real panel: as many voices as the patch\'s poly number (up to 32) and up to 8 unison voices. It needs much more CPU (the sound may crackle on a slow computer), and a badge in the title bar shows that it is on. Unison is still not available for pulse waves.'},
+    {k: 'os1filter', title: 'DSP flavor: Filter', opts: [[0, 'ELITA (default)'], [1, 'OpenSynth1']],
+     note: 'ELITA: the filter tuned to Synth1 recordings (Biquad / Ladder below). OpenSynth1: the filter of the OpenSynth1 project (MIT; LP12 / HP12 / BP12 as a state-variable filter run in 2 sub-steps per sample, LP24 as a 4-pole cascade, LPDL as a diode ladder, with its own resonance and saturation). The cutoff, key track, filter envelope and LFO stay ELITA\'s (limited to 16 kHz, the range this filter is built for). The sound differs from ELITA\'s on purpose; OpenSynth1 does not aim at Synth1\'s exact sound. The "Filter engine" setting below is not used while this is on. Only with the C++ / Wasm engine.'},
     {k: 'filter', title: 'Filter engine', opts: [['biquad', 'Biquad'], ['ladder', 'Ladder']],
      note: 'Biquad: the standard filter, tuned to Synth1 recordings. Ladder: experimental 4-pole 24 dB/oct (zero-delay feedback). Only Low-pass 24 dB uses the ladder; HP / BP / 12 dB stay biquad.'},
     {k: 'ladder', title: 'Ladder character', opts: [['soft', 'Soft limit'], ['stage', 'Per-stage tanh']], needs: ['filter', 'ladder'],
@@ -27,7 +29,7 @@
     {k: 'drift', title: 'Slow drift', opts: [[0, 'Off'], [1, 'Low'], [2, 'Medium'], [3, 'High']],
      note: 'Pitch and cutoff of each voice wander slowly and randomly (time constant about 3 s). Not repeatable from note to note.'},
   ];
-  const DEF = {engine: 'core', limits: 'elita', filter: 'biquad', ladder: 'soft', syncAA: 0, ladfb: 0, curve: 0, slop: 0, drift: 0};
+  const DEF = {engine: 'core', limits: 'elita', os1filter: 0, filter: 'biquad', ladder: 'soft', syncAA: 0, ladfb: 0, curve: 0, slop: 0, drift: 0};
   const SLOP = [0, 2, 5, 9], DRIFT = [0, 2, 4, 8];
   const ok = (k, v) => { const it = ITEMS.find(x => x.k === k); return !!it && it.opts.some(o => o[0] === v); };
   let cur = Object.assign({}, DEF);
@@ -49,7 +51,7 @@
     if (c) { if (c.sy1 && E.loadSy1) E.loadSy1(c.sy1); if (typeof c.vol === 'number' && E.setValue) E.setValue('vol', c.vol); }
   } catch (e) { /* ignore */ }
   function apply() {
-    S.LIMITS = cur.limits; badge();
+    S.LIMITS = cur.limits; badge(); S.OS1_FILTER = !!cur.os1filter;
     S.FILTER = cur.filter; S.LADDER_SAT = cur.ladder; S.SYNC_AA = !!cur.syncAA; S.LADDER_FBHP = cur.ladfb ? 150 : 0; S.CUT_SMOOTH = !!cur.curve;
     S.analog.slop = SLOP[cur.slop]; S.analog.drift = DRIFT[cur.drift];
     if (E.engine && E.engine.refresh) E.engine.refresh();

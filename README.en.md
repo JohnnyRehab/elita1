@@ -366,12 +366,15 @@ ELITA-1 is modelled on the soft synth **Synth1** by Daichi (Ichiro Toda), with r
 ## Libraries used
 
 - [Tone.js](https://tonejs.github.io/) 14.8.49 (MIT License; used only when the original engine is chosen)
-- The C++ / Wasm core is our own code and uses no external library (not even libc)
-- [NexusUI](https://nexus-js.github.io/ui/) (MIT License)
+- The C++ / Wasm core is our own code and uses no external library (not even libc), except that it builds in code from [OpenSynth1](https://github.com/letsdig/OpenSynth1) (MIT License) for the filters and more (`core/os1/`)
+- [NexusUI](https://nexus-js.github.io/ui/) 2.1.6 (MIT License)
+- [destyle.css](https://github.com/nicolas-cusan/destyle.css) 2.0.2 (MIT License)
+
+The copyright notices and full license texts of these are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## License and notes
 
-- Decide the license of this repository's code when you publish it, and add a `LICENSE` file (for example MIT).
+- **The ELITA-1 code and documentation are under the MIT License** ([LICENSE](LICENSE)). The bundled third-party code follows its own licenses ([THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), `js/Tone.js.LICENSE.txt`, `core/os1/NOTICE-OpenSynth1.md`). Keep these files when you redistribute.
 - **The rights to Synth1 patches (`.sy1`) belong to their authors.** Do not include them in the repository or redistribute them without permission. This repository contains no patches.
 - "Synth1" is the product name of its author (Ichiro Toda). This project is unofficial and has no relation to the author or distributor.
-- `img/e1.png` is the icon made for this project. If you reuse it, follow the author's wishes.
+- `img/e1.png` is the icon made for this project. It is not covered by the MIT License; if you reuse it, follow the author's wishes. `img/e1.png` and `img/triangle.svg` carry embedded content credentials (C2PA) showing that Claude (Anthropic) took part in making them.

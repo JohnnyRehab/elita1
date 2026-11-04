@@ -398,7 +398,7 @@ constexpr int MAXV = 32, MAXU = 8, CHUNK = 16, MAXF = 1024, NP = 100;
 constexpr double PAN_C = 0.7071067811865476;                       // StereoPanner at pan 0 for a mono voice
 
 double P[NP];                                                      // Synth1 raw values #0..#98, [99] = master volume
-struct Cfg { int polyN = 5; int uniMax = 3; double bend = 0; int cutSmooth = 0; int syncAA = 0; double bpm = 120, slop = 0, drift = 0, lookahead = 0.006; int filter = 0, ladSat = 0; double ladFb = 0; } C;   // slop / drift: cents (Settings); filter 1 = ladder; ladFb: Hz or 0
+struct Cfg { int polyN = 5; int uniMax = 3; double bend = 0; int cutSmooth = 0; int syncAA = 0; double bpm = 120, slop = 0, drift = 0, lookahead = 0.006; int filter = 0, ladSat = 0; double ladFb = 0; int os1Filter = 0; } C;   // slop / drift: cents (Settings); filter 1 = ladder; ladFb: Hz or 0; os1Filter: 1 = the OpenSynth1 filter replaces the biquad / ladder
 bool dirty = true;
 
 // values derived from P (recomputed once per ec_process call after a change)
@@ -486,6 +486,33 @@ void fillMods(int frames) {
 const double SL1[5] = {-0.8, 0.7, -0.45, 0.9, -1}, SL2[5] = {0.6, -0.9, 0.75, -0.5, 0.35}, SLC[5] = {0.6, -0.4, 0.9, -0.7, 0.2};   // per-voice slop offsets (js/voice.js)
 inline double rt(int n, int c) { return n > 1 ? G.ratio[c] : 1.0; }          // detune ratio of copy c: only the fat copies are spread
 inline double mtan(double x) { return msin(x) / mcos(x); }
+
+// OpenSynth1 DSP (MIT, see os1/NOTICE-OpenSynth1.md), imported as is from core/os1. os1m = the math it needs, taken from this file's own freestanding functions.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+#pragma clang diagnostic ignored "-Wunused-const-variable"   // the envelope and oscillator headers (os1_env.h, os1_osc.h) are not wired in yet
+namespace os1m {
+constexpr double pi = PI;
+constexpr float pi_f = (float)PI, twoPi_f = (float)(2 * PI);
+template <class T> inline T jlimit(T lo, T hi, T v) { return v < lo ? lo : (hi < v ? hi : v); }
+template <class T> inline T max(T a, T b) { return a < b ? b : a; }
+template <class T> inline T min(T a, T b) { return b < a ? b : a; }
+inline float abs(float x) { return x < 0 ? -x : x; }
+inline double abs(double x) { return x < 0 ? -x : x; }
+inline float sin(float x) { return (float)msin(x); }
+inline double sin(double x) { return msin(x); }
+inline float cos(float x) { return (float)mcos(x); }
+inline double cos(double x) { return mcos(x); }
+inline double tan(double x) { return mtan(x); }
+inline double exp(double x) { return mexp(x); }
+inline double log(double x) { return mlog(x); }
+inline float pow(float a, float b) { return (float)mpow(a, b); }
+inline double pow(double a, double b) { return mpow(a, b); }
+inline float fmod(float a, float b) { return a - b * (float)(int64_t)(a / b); }   // C fmod (truncation); the callers only pass positive values
+inline bool isfinite(double x) { return __builtin_isfinite(x); }
+}
+#pragma clang diagnostic pop
+#include "os1/os1_filter.h"   // OpenSynthFilter: LP12 / LP24 / HP12 / BP12 / LPDL (Settings > DSP flavor)
 inline double thr_(double x) { return x > 4.5 ? 1 : x < -4.5 ? -1 : x * (27 + x * x) / (27 + 9 * x * x); }   // rational tanh of the ladder worklet
 
 struct Glide {
@@ -510,6 +537,7 @@ struct Voice {
   Env me;                                                          // mod envelope (attack -> decay to 0, ignores note-off)
   double d1 = 0, d2 = 0, dc = 0; uint32_t drng = 12345;           // analog drift state (cents)
   double ls[4] = {}, lz = 0;                                       // ladder filter stages, feedback high-pass state
+  OpenSynthFilter of; bool lastOs1 = false;                        // OpenSynth1 filter (C.os1Filter)
   int lastW1 = -1, lastW2 = -1, lastWS = -1, lastN1 = 0, lastN2 = 0, lastNS = 0, lastNst = 0, lastFt = -1;
   bool phased = false;
   Glide g1, g2;
@@ -539,6 +567,7 @@ struct Voice {
   void refresh() { setAmt(); setPitch(0); }                        // called when any parameter changed
 
   void down(int n, double vel, double glide, bool retrig) {
+    if (amp.silent()) of.reset();                                  // OpenSynth1 filter: a fresh note on a silent voice starts from zero state (as startNote does there)
     midi = n + P[9]; note = n; freq = 440.0 * mexp2((midi - 69) / 12);
     setPitch(glide); trackCut();
     everUsed = true;
@@ -586,6 +615,7 @@ struct Voice {
     lastPan = G.pan; lastLay = G.lay;
     if (G.wS != lastWS || G.nS != lastNS) { resetPhases(G.wS, G.nS, phS, 0); lastWS = G.wS; lastNS = G.nS; }
     if (G.nst != lastNst || G.ftype != lastFt) { if (G.nst != lastNst) { f1[0] = Biquad(); f1[1] = Biquad(); } lastNst = G.nst; lastFt = G.ftype; }
+    const bool os1 = C.os1Filter != 0; if (os1 != lastOs1) { of.reset(); lastOs1 = os1; }
     float osc[CHUNK], A[CHUNK], B[CHUNK], Sb[CHUNK], Y[CHUNK], fmul[CHUNK], Ar[CHUNK], Br[CHUNK], U1[CHUNK], U2[CHUNK];
     const bool needAr = G.pan && G.g1 != 0, needBr = G.pan && G.g2 != 0, needU1 = G.lay && G.g1 != 0, needU2 = G.lay && G.g2 != 0;
     const bool needA = G.g1 != 0 || G.gr != 0, needB = G.g2 != 0 || G.gr != 0 || G.fmPossible, needS = G.gs != 0, needY = G.gsync != 0;
@@ -644,7 +674,15 @@ struct Voice {
       double fev = fe.v;
       double fHz = feBase + fev * (feBase * mexp2(feOct) - feBase);
       const double cut = cc + M.cut;
-      if (G.useLad) {
+      // OpenSynth1 filter: Elita's cutoff (envelope, key track, LFO, slop / drift) goes in as Hz; resonance = #20 / 127; saturation = OpenSynth1's soft clip in front of the filter
+      double os1Hz = 0; float os1Res = 0, os1K = 0; const int os1Type = (int)clampd(P[14], 0, 4);
+      if (os1) {
+        os1Hz = cut != 0 ? fHz * mexp2(cut / 1200) : fHz; os1Hz = clampd(os1Hz, 15, dmin(16000, SR / 3));   // OpenSynth1's own range: its cutoff table ends at 16 kHz. Above SR/3 the state-variable filter's step F exceeds 1 and it latches to a DC value (key track / LFO push Elita's Hz that high)
+        os1Res = (float)(P[20] / 127); os1K = P[23] > 0.01 ? (float)(P[23] / 127 * 6.0) : 0.0f;
+      }
+      if (os1) {
+        // processed per sample below
+      } else if (G.useLad) {
         // ladder worklet (js/worklets.js): zero-delay-feedback 4-pole, the cutoff is computed once per chunk
         double f = fHz * G.ladScale; if (cut != 0) f *= mexp2(cut / 1200);
         f = f < 8 ? 8 : f > SR * 0.45 ? SR * 0.45 : f;
@@ -679,9 +717,10 @@ struct Voice {
       double gL = PAN_C, gR = PAN_C;
       if (M.pan != 0) { const double a = (clampd(M.pan, -1, 1) + 1) * (PI / 4); gL = mcos(a); gR = msin(a); }
       for (int s = 0; s < m; s++) {
-        double x = G.useLad ? (double)osc[s] : f1[0].run(osc[s]);
-        if (!G.useLad && G.nst > 1) x = f1[1].run(x);
-        if (G.satWet > 0) x = x * G.satDry + G.satG * mtanh(8 * clampd(x * G.satPre, -1, 1));
+        double x;
+        if (os1) { float in = osc[s]; if (os1K != 0) in = (1.0f + os1K) * in / (1.0f + os1K * os1m::abs(in)); x = of.processSample(in, (float)os1Hz, os1Res, os1Type, (float)SR); }
+        else { x = G.useLad ? (double)osc[s] : f1[0].run(osc[s]); if (!G.useLad && G.nst > 1) x = f1[1].run(x); }
+        if (!os1 && G.satWet > 0) x = x * G.satDry + G.satG * mtanh(8 * clampd(x * G.satPre, -1, 1));
         x *= amp.tick() * M.vg; fe.tick();
         mixL[s0 + s] += (float)(x * gL); mixR[s0 + s] += (float)(x * gR);
       }
@@ -1067,6 +1106,7 @@ EC_API void ec_init(double sampleRate) {
   G = Glob(); C = Cfg();          // no static constructors run in the wasm module: initialise everything here
   for (int k = 0; k < NB; k++) thr[k] = NYQ / (1024 >> k);
   if (!tablesBuilt) buildTables();
+  OpenSynthFilter::init();        // cutoff table of the OpenSynth1 filter
   for (int i = 0; i < NP; i++) P[i] = 0;
   P[99] = 100;
   for (int i = 0; i < MAXV; i++) { V[i] = Voice(); V[i].rng = 2463534242u + 7919u * i; V[i].drng = 88172645u + 104729u * i; V[i].idx = i; }
@@ -1077,7 +1117,7 @@ EC_API void ec_init(double sampleRate) {
   fxInit();
 }
 EC_API void ec_set_param(int id, double v) { if (id >= 0 && id < NP && P[id] != v) { P[id] = v; dirty = true; } }
-EC_API void ec_set_cfg(int key, double v) {                       // 0 poly, 1 unison max, 2 pitch bend (semitones), 3 smooth cutoff curve, 4 hard-sync anti-aliasing, 5 BPM, 6 slop (cents), 7 drift, 8 ladder filter, 9 ladder stage saturation, 10 ladder feedback high-pass (Hz)
+EC_API void ec_set_cfg(int key, double v) {                       // 0 poly, 1 unison max, 2 pitch bend (semitones), 3 smooth cutoff curve, 4 hard-sync anti-aliasing, 5 BPM, 6 slop (cents), 7 drift, 8 ladder filter, 9 ladder stage saturation, 10 ladder feedback high-pass (Hz), 11 limiter look-ahead (s), 12 OpenSynth1 filter
   switch (key) {
     case 0: C.polyN = (int)clampd(v, 1, MAXV); for (int i = C.polyN; i < MAXV; i++) { V[i].amp = Env(); V[i].fe = Env(); } break;
     case 1: C.uniMax = (int)clampd(v, 1, MAXU); break;
@@ -1091,6 +1131,7 @@ EC_API void ec_set_cfg(int key, double v) {                       // 0 poly, 1 u
     case 9: C.ladSat = v != 0; break;
     case 10: C.ladFb = v; break;
     case 11: C.lookahead = clampd(v, 0, 0.02); break;
+    case 12: C.os1Filter = v != 0; break;
     default: break;
   }
   dirty = true;
@@ -1160,6 +1201,10 @@ EC_API double ec_dbg_curve(int which, double v) {
 EC_API void ec_dbg_biquad(int type, double freqHz, double q, int n) {   // impulse response into DBG[0..n)
   Biquad b; b.set(type, freqHz / NYQ, q, resonanceTerm(q));
   for (int i = 0; i < n; i++) DBG[i] = (float)b.run(i == 0 ? 1.0 : 0.0);
+}
+EC_API void ec_dbg_os1(int type, double hz, double res, int n) {   // tests: the OpenSynth1 filter on an impulse followed by noise (xorshift, amplitude 0.5) into DBG[0..n)
+  OpenSynthFilter f; uint32_t r = 1;
+  for (int i = 0; i < n; i++) { float in = i == 0 ? 1.0f : (float)(urand(r) * 0.5); DBG[i] = f.processSample(in, (float)hz, (float)res, type, (float)SR); }
 }
 EC_API void ec_dbg_env(double atk, double dec, double sus, double rel, double vel, int noteSamples, int n) {   // envelope output into DBG[0..n)
   Env e; e.trigger(vel, atk, dec, sus);

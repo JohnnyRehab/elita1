@@ -6,6 +6,15 @@ When the version is raised, what was done is added here (newest first).
 Claude decides when to raise the version number and asks for confirmation first. The version shown on screen is the version label and the UPDATED date in `index.html`.
 The in-app "UPDATED" window reads the Japanese `history.md`; this file is the English copy.
 
+## ver 0.5.7b — 2026.11.04
+
+**The filter of OpenSynth1 (MIT) can now be selected.** Settings > "DSP flavor: Filter" switches between ELITA (default) and OpenSynth1. The default sound is unchanged (all 79 A/B cases pass).
+
+- **Imported:** `core/os1/` holds the OpenSynth1 filters (LP12 / LP24 / HP12 / BP12 / LPDL), envelope and oscillator code without JUCE (source and license in `core/os1/NOTICE-OpenSynth1.md`). Its output matches the original over about 9.08 million comparisons, bit for bit. Only the **filter** is connected to the core (envelope and oscillators are not yet).
+- **Fixed (found in review):** with a high cutoff (large #19, key track, LFO) the OpenSynth1 state-variable filter used to settle on a constant DC level. The cutoff is now limited to `min(16000, SR/3)` Hz, and a regression test was added.
+- **Licensing:** added `LICENSE` (MIT License), and `THIRD_PARTY_NOTICES.md` with the copyright notices and full license texts of the bundled third-party code (Tone.js, NexusUI, destyle.css, OpenSynth1). Added `js/Tone.js.LICENSE.txt`, which the Tone.js header points to, and a `.gitignore`.
+- **Known limits:** switching the flavor makes a click. LPDL is up to 16 dB quieter than LP24 at low cutoff and high notes and keeps a small DC (up to -0.023). CPU load is about 1.4 to 3.5 times that of the ELITA filter.
+
 ## ver 0.5.7 — 2026.11.03
 
 **The sound engine has been replaced by a C++ / WebAssembly core.** The Tone.js sound path used too much CPU to get the lightness of the real Synth1, so only the audio processing was moved into a C++ core that runs inside one AudioWorklet. The UI (panel, keyboard, patches, MIDI, arpeggiator) is unchanged. The new engine is the default, and the original Tone.js engine can be chosen in Settings. The technical notes are in [core/README.md](core/README.md) (Japanese).
