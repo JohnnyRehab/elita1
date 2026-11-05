@@ -398,7 +398,7 @@ constexpr int MAXV = 32, MAXU = 8, CHUNK = 16, MAXF = 1024, NP = 100;
 constexpr double PAN_C = 0.7071067811865476;                       // StereoPanner at pan 0 for a mono voice
 
 double P[NP];                                                      // Synth1 raw values #0..#98, [99] = master volume
-struct Cfg { int polyN = 5; int uniMax = 3; double bend = 0; int cutSmooth = 0; int syncAA = 0; double bpm = 120, slop = 0, drift = 0, lookahead = 0.006; int filter = 0, ladSat = 0; double ladFb = 0; int os1Filter = 0; } C;   // slop / drift: cents (Settings); filter 1 = ladder; ladFb: Hz or 0; os1Filter: 1 = the OpenSynth1 filter replaces the biquad / ladder
+struct Cfg { int polyN = 5; int uniMax = 3; double bend = 0; int cutSmooth = 0; int syncAA = 0; double bpm = 120, slop = 0, drift = 0, lookahead = 0.006; int filter = 0, ladSat = 0; double ladFb = 0; int os1Filter = 0, uniSync = 0; } C;   // slop / drift: cents (Settings); filter 1 = ladder; ladFb: Hz or 0; os1Filter: 1 = the OpenSynth1 filter replaces the biquad / ladder
 bool dirty = true;
 
 // values derived from P (recomputed once per ec_process call after a change)
@@ -548,7 +548,7 @@ struct Voice {
   // The copies of a fat oscillator have phi = deg + i / count (full turns); the first copy of a plain one has phi = deg.
   void resetPhases(int w, int n, double* ph, double deg) {
     (void)w;
-    for (int i = 0; i < MAXU; i++) ph[i] = wrap1(-(deg + (n > 1 ? (double)i / n : 0)));
+    for (int i = 0; i < MAXU; i++) ph[i] = wrap1(-(deg + (n > 1 && !C.uniSync ? (double)i / n : 0)));   // uniSync (cfg 13, Synth1-like): every copy starts at the same angle
   }
   void trackCut() {                                                // js/voice.js trackCut + capOct
     double dn = midi - KT_BASE;
@@ -1029,7 +1029,7 @@ void updateGlobals() {
   for (int i = 0; i < MAXU; i++) G.ratio[i] = 1;
   // each copy has its own detune in the Tone FatOscillator: -spread/2 + i * spread / (count - 1) cents (one ratio table is shared by both oscillators)
   if (uni > 1) for (int i = 0; i < uni; i++) G.ratio[i] = mexp2((-spread / 2 + i * spread / (uni - 1)) / 1200);
-  G.gf1 = fat1 ? mpow(10, (-6 - uni * 1.1) / 20) : 1; G.gf2 = fat2 ? mpow(10, (-6 - uni * 1.1) / 20) : 1;
+  G.gf1 = fat1 && !C.uniSync ? mpow(10, (-6 - uni * 1.1) / 20) : 1; G.gf2 = fat2 && !C.uniSync ? mpow(10, (-6 - uni * 1.1) / 20) : 1;   // uniSync: only the 1 / sqrt(N) in `un` below (Synth1: unison on / off at the same level)
   // unison stereo width: needs a fat OSC1 or OSC2; it adds a second set of copies and scales every OSC level by 1 / sqrt(2) (js/voice.js applyOsc)
   G.pan = uni > 1 && P[84] > 0 && (fat1 || fat2);
   { double th = PI / 4 * (1 - P[84] / 127); G.panK = G.pan ? (mcos(th) + msin(th)) / 2 : 1; }
@@ -1132,6 +1132,8 @@ EC_API void ec_set_cfg(int key, double v) {                       // 0 poly, 1 u
     case 10: C.ladFb = v; break;
     case 11: C.lookahead = clampd(v, 0, 0.02); break;
     case 12: C.os1Filter = v != 0; break;
+    case 13: { int s = v != 0; if (s != C.uniSync) { C.uniSync = s; dirty = true;      // the copies start at the same angle: restart the free-running phases
+      for (int i = 0; i < MAXV; i++) { V[i].resetPhases(W_SAW, 1, V[i].ph1, 0); V[i].resetPhases(W_SAW, 1, V[i].ph2, 0); V[i].resetPhases(W_SAW, 1, V[i].phS, 0); V[i].resetPhases(W_SAW, 1, V[i].phR1, 0); V[i].resetPhases(W_SAW, 1, V[i].phR2, 0); V[i].resetPhases(W_SAW, 1, V[i].phU1, 0); V[i].resetPhases(W_SAW, 1, V[i].phU2, 0); } } break; }
     default: break;
   }
   dirty = true;

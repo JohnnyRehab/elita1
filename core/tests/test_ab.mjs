@@ -114,6 +114,7 @@ async function renderOld(c) {
 async function renderNew(c) {
   const page = await browser.newPage(); await page.goto(`http://localhost:${port}/index.html?engine=core`); await page.waitForFunction(() => window.ELITA && ELITA.engine && ELITA.engine.core);
   const out = await page.evaluate(async ({c, SR, DUR, NOTE_OFF}) => {
+    ELITA.core.UNI_SYNC = false;                                    // A/B compares with the Tone engine, whose unison copies start staggered (the app itself starts them in phase)
     if (c.limits) { ELITA.core.LIMITS = c.limits; ELITA.engine.refresh(); }
     if (c.syncAA) ELITA.core.SYNC_AA = true;
     if (c.filter) ELITA.core.FILTER = c.filter; if (c.ladsat) ELITA.core.LADDER_SAT = c.ladsat; if (c.ladfb) ELITA.core.LADDER_FBHP = c.ladfb; if (c.analog) Object.assign(ELITA.core.analog, c.analog);

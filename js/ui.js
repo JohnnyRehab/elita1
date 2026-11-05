@@ -194,13 +194,15 @@
   const TPTS = [[0, 0], [19, 6], [28, 23], [32, 29], [33, 30], [34, 32], [35, 33], [47, 47], [56, 55], [64, 62], [67, 65], [76, 73], [78, 74], [80, 76], [91, 86], [92, 87], [102, 97], [105, 100], [127, 122]];
   const tmap = v => { for (let i = 0; i < TPTS.length - 1; i++) { const [a, b] = TPTS[i], [c, d] = TPTS[i + 1]; if (v >= a && v <= c) return Math.round(b + (d - b) * (v - a) / (c - a)); } return v; };
   const legacy = (no, v) => no === 21 ? Math.floor(63.5 + v / 2) : no === 37 ? Math.floor(v / 2) : (no === 16 || no === 18 || no === 26 || no === 28) ? tmap(v) : no === 55 ? (v === 0 ? 64 : v) : no === 54 ? (v === 64 ? 50 : v) : v;
+  // LFO destination (#41, #46): the .sy1 value is 0-based (0 osc2, 1 osc1&2, 2 filter, 3 amp, 4 p/w, 5 FM, 6 pan; Synth1 measurement + OpenSynth1), the panel and the engines count from 1
+  const LFODEST = no => no === 41 || no === 46;
   function loadSy1(text) {
     const L = text.replace(/\r/g, '').split('\n');
     const ver = parseInt((L[2] || '').replace(/^ver=/, ''), 10), old = ver > 0 && ver <= 105;
     Object.keys(DEF).forEach(no => { if (no !== 'vol') set(no, DEF[no]); });   // old patches lack some numbers
     E.extra = {};
     let n = 0;
-    L.slice(3).forEach(l => { const m = l.match(/^\s*(\d+)\s*,\s*(-?\d+)\s*$/); if (!m) return; const no = +m[1], v = old ? legacy(no, +m[2]) : +m[2]; if (ctl[no]) { set(no, v); n++; } else E.extra[no] = v; });
+    L.slice(3).forEach(l => { const m = l.match(/^\s*(\d+)\s*,\s*(-?\d+)\s*$/); if (!m) return; const no = +m[1], v = old ? legacy(no, +m[2]) : +m[2]; if (ctl[no]) { set(no, LFODEST(no) ? Math.max(1, Math.min(7, v + 1)) : v); n++; } else E.extra[no] = v; });
     Object.keys(P).forEach(no => { if (E.onChange && no !== 'vol') E.onChange(+no, P[no]); });
     const cm = (L[1] || '').match(/^color=(.*)$/);
     E.patch = {name: L[0] || '(no name)', color: cm ? cm[1].trim() : 'default'};
@@ -213,7 +215,7 @@
     const ascii = s => String(s).replace(/[\r\n]/g, ' ').replace(/[^\x20-\x7e]/g, '_').trim();   // Synth1 reads names in the system code page, so keep the file ASCII
     const order = ORDER.slice(); for (let i = 73; i <= 98; i++) order.push(i);
     const out = [ascii(name || E.patch.name) || 'patch', 'color=' + ascii(E.patch.color || 'default'), 'ver=113'];
-    order.forEach(no => { const v = ctl[no] ? P[no] : (E.extra[no] != null ? E.extra[no] : SPARE[no]); if (v != null && !isNaN(v)) out.push(no + ',' + v); });
+    order.forEach(no => { const v = ctl[no] ? (LFODEST(no) ? Math.max(0, P[no] - 1) : P[no]) : (E.extra[no] != null ? E.extra[no] : SPARE[no]); if (v != null && !isNaN(v)) out.push(no + ',' + v); });
     return out.join('\r\n') + '\r\n';
   };
   async function readFile(f) {

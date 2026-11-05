@@ -10,12 +10,12 @@
   const ACTIVE = window.ELITA_BOOT ? window.ELITA_BOOT.active === 'core' : new URLSearchParams(location.search).get('engine') === 'core';   // js/loader.js decides (Settings > Sound engine)
   // Synth1 numbers the core reads (shown as "used" in the parameter list)
   const USED = [35, 36, 37, 52, 53, 54, 55, 56, 60, 61, 62, 63, 64, 65, 66, 77, 78, 79, 80, 81, 82, 83, 98, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 41, 42, 43, 44, 46, 47, 48, 49, 57, 58, 67, 68, 69, 70, 71, 85, 45, 84, 95, 96, 97, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 38, 39, 72, 73, 74, 75, 76, 90, 91, 92, 93, 94];
-  const CFG = {poly: 0, uniMax: 1, bend: 2, cutSmooth: 3, syncAA: 4, bpm: 5, slop: 6, drift: 7, filter: 8, ladSat: 9, ladFb: 10, lookahead: 11, os1Filter: 12};
+  const CFG = {poly: 0, uniMax: 1, bend: 2, cutSmooth: 3, syncAA: 4, bpm: 5, slop: 6, drift: 7, filter: 8, ladSat: 9, ladFb: 10, lookahead: 11, os1Filter: 12, uniSync: 13};
   // Settings the core takes from outside the patch (as config events)
   const settingsEvents = () => [{k: 'c', i: CFG.cutSmooth, v: S.CUT_SMOOTH ? 1 : 0}, {k: 'c', i: CFG.syncAA, v: S.SYNC_AA ? 1 : 0}, {k: 'c', i: CFG.bpm, v: S.BPM || 120},
     {k: 'c', i: CFG.slop, v: (S.analog && S.analog.slop) || 0}, {k: 'c', i: CFG.drift, v: (S.analog && S.analog.drift) || 0},
     {k: 'c', i: CFG.filter, v: S.FILTER === 'ladder' ? 1 : 0}, {k: 'c', i: CFG.ladSat, v: S.LADDER_SAT === 'stage' ? 1 : 0}, {k: 'c', i: CFG.ladFb, v: S.LADDER_FBHP || 0},
-    {k: 'c', i: CFG.os1Filter, v: S.OS1_FILTER ? 1 : 0}];
+    {k: 'c', i: CFG.os1Filter, v: S.OS1_FILTER ? 1 : 0}, {k: 'c', i: CFG.uniSync, v: S.UNI_SYNC === false ? 0 : 1}];   // unison copies start in phase: with the Tone-style staggered start two or three triangle copies cancel at note-on (patch 98 Free Ride FX was nearly silent)
 
   // A voice as seen by notes.js: the same fields as the Tone voice (on / note / t) and down() / up(), which go to the core.
   class CoreVoice {
