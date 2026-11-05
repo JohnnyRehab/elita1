@@ -27,7 +27,7 @@
   const common1 = ['NexusUI.js', 'ui.js', 'calib.js'];
   const tone = ['Tone.js'].concat(common1, ['worklets.js', 'voice.js', 'fx.js', 'notes.js', 'debug.js', 'engine.js']);
   const core = common1.concat(['notes.js', 'engine.js', 'core/core-engine.js']);   // engine.js keeps the BPM box and the engine contract; it never touches Tone while S.CORE is set
-  const tail = ['keymap.js', 'keys.js', 'patches.js', 'scope.js', 'params.js', 'history.js', 'mml.js', 'log.js', 'midi.js', 'theme.js', 'settings.js', 'keyconfig.js'];
+  const tail = ['keymap.js', 'keys.js','voiceind.js', 'patches.js', 'scope.js', 'params.js', 'history.js', 'mml.js', 'log.js', 'midi.js', 'theme.js', 'settings.js', 'keyconfig.js'];
   const base = (document.currentScript && document.currentScript.src || location.href + 'js/').replace(/[^/]*$/, '');
   (active === 'core' ? core : tone).concat(tail).forEach(f => document.write('<script src="' + base + f + '"><\/script>'));
 })();

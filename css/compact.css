@@ -31,7 +31,8 @@
 
 /* bottom strip */
 #elita1 #bottom{ grid-column:1/-1; display:flex; gap:4px; padding:0; border:0; background:none; }
-#elita1 #voice{ flex:0 0 492px; }
+#elita1 #vcol{ flex:0 0 492px; align-self:stretch; display:flex; flex-direction:column; gap:4px; }   /* Voice panel top = patch box top; the indicator fills the space below it */
+#elita1 #vcol #voice{ flex:none; }
 #elita1 #patchbox{ flex:1; display:flex; align-items:center; gap:10px; padding:4px 8px; border:1px solid var(--dk); background:var(--panel); font:inherit; color:inherit; }
 #lcdbox{ flex:1; align-self:stretch; display:flex; flex-direction:column; justify-content:center; background:var(--lcd); border:1px solid var(--lcd-edge); padding:2px 8px; color:var(--lcdf); font:15px/1.3 monospace; }
 #pinfo{ font-size:11px; opacity:.8; }
@@ -52,7 +53,6 @@
 #kbinfo{ flex:0 0 150px; display:flex; flex-wrap:wrap; align-content:center; align-items:center; justify-content:center; gap:4px 6px; font-size:10px; text-align:center; }
 #kbinfo b{ font-size:11px; min-width:72px; text-align:center; background:var(--lcd); color:var(--lcdf); padding:2px 4px; font-family:monospace; }
 #kbinfo .sb{ padding:1px 8px; }
-#vc{ flex:0 0 100%; font-size:9px; opacity:.8; }
 #kb{ position:relative; flex:1; display:flex; height:56px; user-select:none; touch-action:none; }
 #kb .key{ display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:0; padding-bottom:2px; font-size:9px; line-height:1.1; color:var(--key-fg); }
 #kb .key.w{ flex:1; background:var(--key-w); border:1px solid var(--dk); border-radius:0 0 3px 3px; }

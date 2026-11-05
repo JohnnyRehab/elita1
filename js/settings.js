@@ -98,8 +98,7 @@
   #plist .tools button#pset{ background:var(--dk); }
   #plist .tools button#pset.s1on{ background:var(--hi); color:var(--hi-fg); }
   #title .s1mode{ padding:1px 10px; background:var(--hi); color:var(--hi-fg); font-weight:700; font-size:11px; letter-spacing:.04em; white-space:nowrap; }
-  #title .s1mode[hidden]{ display:none; }
-  #vc{ white-space:nowrap; }`;
+  #title .s1mode[hidden]{ display:none; }`;
   document.head.appendChild(css);
   const dlg = document.createElement('dialog'); dlg.id = 'setdlg';
   dlg.innerHTML = '<div class="th"><span>Settings</span><button type="button" id="setclose">close</button></div><div class="tb">' +

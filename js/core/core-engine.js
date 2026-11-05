@@ -26,7 +26,7 @@
   }
 
   class CoreEngine {
-    constructor() { this.ctx = null; this.node = null; this.out = null; this.analyser = null; this.buf = null; this.queue = []; this.ready = false; this.started = null; this.timed = null; }
+    constructor() { this.ctx = null; this.node = null; this.out = null; this.analyser = null; this.buf = null; this.queue = []; this.ready = false; this.started = null; this.timed = null; this.status = null; }
     // Before attach() only note events are kept: parameters and settings are sent in full (stateEvents) when the node is created, and an older queued value
     // must not overwrite them.
     send(ev) { if (this.ready) this.node.port.postMessage({a: [ev]}); else if (ev.k === 'on' || ev.k === 'off') this.queue.push(ev); }
@@ -47,9 +47,9 @@
       const bytes = await (await fetch(BASE + 'elita_core.wasm')).arrayBuffer();
       const module = await WebAssembly.compile(bytes);
       const init = this.stateEvents().concat(this.queue, extra); this.queue = [];
-      const node = this.node = new AudioWorkletNode(ctx, 'elita-core', {numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2], processorOptions: {module, init}});
+      const node = this.node = new AudioWorkletNode(ctx, 'elita-core', {numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2], processorOptions: {module, init, status: !(ctx instanceof OfflineAudioContext)}});
       await new Promise(res => { node.port.onmessage = ev => { if (ev.data && ev.data.ready) res(); }; });
-      node.port.onmessage = null;
+      node.port.onmessage = ev => { if (ev.data && ev.data.st) this.status = ev.data; };   // the indicator data from the worklet (live context only)
       if (!(ctx instanceof OfflineAudioContext)) {
         const an = this.analyser = ctx.createAnalyser(); an.fftSize = 2048; an.smoothingTimeConstant = 0; this.buf = new Float32Array(2048);
         node.connect(an); an.connect(destination || ctx.destination);
@@ -98,6 +98,7 @@
     refresh, get POLY() { return S.POLY; }, get unisonMax() { return S.UNI_MAX; }, get limits() { return S.LIMITS; },
     filterMode: m => { if (m === 'ladder' || m === 'biquad') { if (E.settings) E.settings.set('filter', m); else S.FILTER = m; } return S.FILTER; },
     bend: s => { S.BEND = +s || 0; eng.send({k: 'c', i: CFG.bend, v: S.BEND}); },
+    levels: () => eng.status,                                          // {l, r, m}: output peaks (0..1) since the previous message and the mask of sounding voices; null before the first message
     rawOn: voiceOn, rawOff: voiceOff, lfoHz: () => [0, 0],
     start: () => eng.start().then(() => { refresh(); eng.sendAll(); }).catch(err => {      // the core could not start (module / Wasm / AudioWorklet failure): fall back to the Tone.js engine
       console.error('[ELITA] the C++ / Wasm core failed to start', err);

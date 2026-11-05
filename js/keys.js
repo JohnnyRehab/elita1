@@ -15,7 +15,7 @@
     if (black) el.style.left = 'calc(' + (wi / WHITES * 100) + '% - var(--bw) / 2)'; else wi++;
     el.onpointerdown = ev => {   // on-screen keys: where you click sets the velocity (top = soft, bottom = loud)
       const r = el.getBoundingClientRect(), v = Math.max(0.15, Math.min(1, 0.15 + 0.85 * (ev.clientY - r.top) / r.height));
-      el._n = base() + i; on(el._n, v); el.classList.add('on'); $('vc').dataset.v = Math.round(v * 127); };
+      el._n = base() + i; on(el._n, v); el.classList.add('on'); };
     el.onpointerup = el.onpointerleave = el.onpointercancel = () => { if (el._n == null) return; off(el._n); el._n = null; el.classList.remove('on'); };
     els.push(el); kb.append(el);
   }
@@ -41,7 +41,6 @@
   addEventListener('keyup', e => { if (held[e.code] != null) { off(held[e.code]); mark(held[e.code], false); delete held[e.code]; } });
   KM.on(() => { releaseAll(); relabel(); });                   // the map was changed (Key config): release held notes, update the key labels
   addEventListener('blur', () => { E.allOff(); Object.keys(held).forEach(k => { mark(held[k], false); delete held[k]; }); });
-  // first gesture anywhere starts the audio context; status text
+  // first gesture anywhere starts the audio context
   addEventListener('pointerdown', () => E.start(), {once: true});
-  setInterval(() => { const v = E.voices(); $('vc').textContent = v ? 'voices ' + v.filter(x => x.on).length + '/' + E.POLY + (E.limits === 'synth1' ? ' (Synth1 spec)' : '') + ($('vc').dataset.v ? '  vel ' + $('vc').dataset.v : '') : 'click / press a key to start audio'; }, 150);
 })();

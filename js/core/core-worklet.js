@@ -1,12 +1,13 @@
 /* ELITA-1 sound engine, AudioWorklet side: runs the Wasm DSP core (core/elita_core.cpp) and nothing else.
    Messages from the main thread (port.postMessage): {a: [event, ...]} a batch of events, {module} the compiled Wasm module (when it was not passed in processorOptions).
+   Back to the main thread (live context only): {st: 1, l, r, m} about 30 times a second: output peaks of the left / right channel since the last message, and a bit mask of the sounding voices.
    event = {k, ...}: k 'p' {i, v} parameter / 'c' {i, v} config / 'on' {i, n, vel, g, r} voice down / 'off' {i} voice up / 'ks' {i} LFO key sync / 'la' {i, v} (tests) advance an LFO by v seconds. An event with t (context seconds) is applied at the first
    block that starts at or after t (the offline tests use this); live events have no t and are applied at once. */
 class ElitaCore extends AudioWorkletProcessor {
   constructor(options) {
     super();
     const o = options.processorOptions || {};
-    this.ready = false; this.pend = [];
+    this.ready = false; this.pend = []; this.status = !!o.status; this.acc = 0;     // status: live context only (the indicator in js/voiceind.js); offline renders post nothing
     this.port.onmessage = ev => {
       const d = ev.data;
       if (d.module) this.boot(d.module);
@@ -47,6 +48,7 @@ class ElitaCore extends AudioWorkletProcessor {
     while (this.pend.length && this.pend[0].t <= currentTime + 1e-9) this.apply(this.pend.shift());
     const n = out[0].length, e = this.e;
     e.ec_process(n);
+    if (this.status && (this.acc += n) >= sampleRate / 30) { this.acc = 0; this.port.postMessage({st: 1, l: e.ec_peak_l(), r: e.ec_peak_r(), m: e.ec_voice_mask() >>> 0}); }   // about 30 times a second
     out[0].set(this.l.subarray(0, n));
     if (out[1]) out[1].set(this.r.subarray(0, n));
     return true;

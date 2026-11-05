@@ -1,0 +1,10 @@
+/* voice indicator (js/voiceind.js): Synth1-style voice cells + L/R level bars, under the Voice panel */
+#elita1 #vind{ flex:1; min-height:0; display:flex; align-items:center; gap:8px; padding:0 2px; }
+#elita1 #vind .vm{ flex:0 0 112px; display:flex; flex-direction:column; gap:3px; }
+#elita1 #vind .vm i{ display:block; height:5px; background:var(--dk); opacity:.45; position:relative; overflow:hidden; border-radius:1px; }
+#elita1 #vind .vm b{ position:absolute; left:0; top:0; bottom:0; width:100%; transform-origin:0 50%; transform:scaleX(0); background:var(--on); box-shadow:0 0 3px var(--on); }
+#elita1 #vind .vc{ flex:1; display:grid; gap:2px; grid-template-columns:repeat(16, 1fr); min-width:0; }
+#elita1 #vind .vc u{ display:block; height:11px; background:var(--lcd-edge); border:1px solid var(--dk); border-radius:1px; opacity:.9; }
+#elita1 #vind .vc u.x{ background:var(--dk); opacity:.3; }
+#elita1 #vind .vc u.on{ background:var(--on); box-shadow:0 0 4px var(--on); opacity:1; }
+#elita1 #vind .vn{ flex:0 0 40px; text-align:right; font:10px/1 ui-monospace,Menlo,Consolas,monospace; white-space:nowrap; opacity:.8; }

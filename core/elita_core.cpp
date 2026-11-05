@@ -731,7 +731,7 @@ struct Voice {
 Voice V[MAXV];
 float outL[MAXF], outR[MAXF], mixL[MAXF], mixR[MAXF];
 double mg = 0, mgInc = 0; int mgLeft = 0;                          // master gain (20 ms ramp, Tone rampTo)
-double peak = 0;
+double peak = 0, peakL = 0, peakR = 0;                              // output peaks since they were last read (peak: both channels; peakL / peakR: the level meters)
 
 // ---------------------------------------------------------------------------------------------------------------------------------
 // Effects (milestone M3). The chain of js/engine.js after the master gain:
@@ -1143,6 +1143,9 @@ EC_API void ec_voice_up(int i) { if (i >= 0 && i < MAXV) V[i].up(); }
 EC_API float* ec_out_l() { return outL; }
 EC_API float* ec_out_r() { return outR; }
 EC_API double ec_peak() { double p = peak; peak = 0; return p; }
+EC_API double ec_peak_l() { double p = peakL; peakL = 0; return p; }   // output level meters (js/voiceind.js): the largest |sample| since the last call
+EC_API double ec_peak_r() { double p = peakR; peakR = 0; return p; }
+EC_API uint32_t ec_voice_mask() { uint32_t m = 0; for (int i = 0; i < C.polyN && i < 32; i++) if (!V[i].amp.silent()) m |= 1u << i; return m; }   // voice indicator: bit i = voice i sounds (a key is held or its release is still running)
 EC_API int ec_active_voices() { int n = 0; for (int i = 0; i < C.polyN; i++) if (!V[i].amp.silent()) n++; return n; }
 
 EC_API void ec_process(int frames) {
@@ -1170,7 +1173,7 @@ EC_API void ec_process(int frames) {
     l = clampd(l, -1, 1); r = clampd(r, -1, 1);
     l = mtanh(1.2 * l) / 1.2; r = mtanh(1.2 * r) / 1.2;
     outL[s] = (float)l; outR[s] = (float)r;
-    double a = dmax(dabs(l), dabs(r)); if (a > peak) peak = a;
+    double al = dabs(l), ar = dabs(r), a = dmax(al, ar); if (a > peak) peak = a; if (al > peakL) peakL = al; if (ar > peakR) peakR = ar;
   }
 }
 
